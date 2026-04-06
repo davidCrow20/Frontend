@@ -1,0 +1,16 @@
+# Ignorar instaladores pesados
+*.exe
+*.msi
+*.dmg
+*.pkg
+
+# Carpetas de sistema
+.DS_Store
+Thumbs.db
+
+# Configuración local
+config.local.js
+.env
+node_modules/
+dist/
+build/

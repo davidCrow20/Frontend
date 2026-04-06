@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Portada — Glitch Geometría</title>
+<style>
+  html,body{height:100%;margin:0;background:#050506;display:flex;align-items:center;justify-content:center;}
+  .wrap{width:100%;max-width:1600px;padding:12px;box-sizing:border-box;}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,0.7);}
+  .controls{margin-top:10px;display:flex;gap:8px;align-items:center;}
+  button{background:#0b6bd6;color:white;border:none;padding:10px 14px;border-radius:6px;font-weight:600;cursor:pointer}
+  button:active{transform:translateY(1px)}
+  p.hint{color:#9aa3b2;margin:0;font-size:13px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas id="cover" width="1600" height="620"></canvas>
+    <div class="controls">
+      <button id="download">Download PNG</button>
+      <p class="hint">Resolución 1600×620 — ideal para portada (subir y recortar si es necesario)</p>
+    </div>
+  </div>
+
+<script>
+// Configs
+const W = 1600, H = 620;
+const canvas = document.getElementById('cover');
+canvas.width = W; canvas.height = H;
+const ctx = canvas.getContext('2d', { alpha: false });
+
+// Utilities
+function rand(a=0,b=1){ return a + Math.random()*(b-a); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+// Background noise + base tint
+function paintBackground() {
+  // base dark blue-black gradient
+  const g = ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0, '#021015');
+  g.addColorStop(0.6, '#00121a');
+  g.addColorStop(1, '#000006');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+
+  // subtle static layer
+  const img = ctx.createImageData(W,H);
+  for(let i=0;i<img.data.length;i+=4){
+    const v = Math.floor(6 + Math.random()*22); // low-intensity noise
+    img.data[i] = v+2;     // r
+    img.data[i+1] = v+10;  // g
+    img.data[i+2] = v+16;  // b
+    img.data[i+3] = 255;
+  }
+  // draw with low alpha to keep the dark vibe
+  const tmp = document.createElement('canvas');
+  tmp.width=W; tmp.height=H;
+  tmp.getContext('2d').putImageData(img,0,0);
+  ctx.globalAlpha = 0.045;
+  ctx.drawImage(tmp,0,0);
+  ctx.globalAlpha = 1;
+}
+
+// Draw circuit-like fractal lines (grid + recursive branching)
+function drawCircuitLines() {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineWidth = 1.3;
+  ctx.strokeStyle = '#0fe0ff'; // cyan-blue
+  ctx.globalAlpha = 0.16;
+
+  const rows = 10, cols = Math.floor(rows * (W/H));
+  const spacingX = W / cols, spacingY = H / rows;
+
+  // base grid of subtle circuit traces
+  for(let y=0;y<=rows;y++){
+    for(let x=0;x<=cols;x++){
+      const cx = Math.floor(x*spacingX + rand(-spacingX*0.15, spacingX*0.15));
+      const cy = Math.floor(y*spacingY + rand(-spacingY*0.15, spacingY*0.15));
+      drawBranch(cx, cy, Math.floor(rand(2,5)), Math.PI*rand(), 0.9);
+    }
+  }
+
+  function drawBranch(x,y,depth,angle,strength) {
+    if(depth<=0) return;
+    const len = 18 + 28*strength + rand(-8,12);
+    const nx = x + Math.cos(angle)*(len*(0.8+0.6*strength));
+    const ny = y + Math.sin(angle)*(len*(0.8+0.6*strength));
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    ctx.lineTo(nx,ny);
+    ctx.stroke();
+    // tiny node
+    if(Math.random() < 0.12) {
+      ctx.beginPath();
+      ctx.arc(nx,ny,0.9+Math.random()*1.6,0,Math.PI*2);
+      ctx.fillStyle = '#09c7ff';
+      ctx.fill();
+    }
+    // recursive forks
+    if(Math.random() < 0.9) drawBranch(nx,ny,depth-1, angle + rand(-0.8,0.8), strength*0.82);
+    if(Math.random() < 0.45) drawBranch(nx,ny,Math.max(0,depth-2), angle + rand(-1.6,1.6), strength*0.6);
+  }
+
+  ctx.restore();
+}
+
+// Draw central geometry (circle + pentagram + eye)
+function drawCentralSymbol(time=0) {
+  ctx.save();
+  const cx = W*0.5, cy = H*0.5;
+  const radius = Math.min(W,H)*0.27;
+
+  // halo glow
+  const g = ctx.createRadialGradient(cx,cy, radius*0.45, cx,cy, radius*1.6);
+  g.addColorStop(0, 'rgba(10,220,255,0.10)');
+  g.addColorStop(0.6, 'rgba(6,80,110,0.02)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(cx-radius*1.6, cy-radius*1.6, radius*3.2, radius*3.2);
+
+  // noisy circle (outer)
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = '#06d1ff';
+  ctx.globalAlpha = 0.98;
+  ctx.beginPath();
+  for(let a=0;a<Math.PI*2;a+=0.02) {
+    const r = radius + Math.sin(a*24 + time*0.006)*2.3 + rand(-0.8,0.8);
+    const x = cx + Math.cos(a)*r;
+    const y = cy + Math.sin(a)*r;
+    if(a===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+
+  // pentagram (hand-drawn rough)
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = '#9ff8ff';
+  ctx.beginPath();
+  const pts = [];
+  for(let i=0;i<5;i++){
+    const ang = -Math.PI/2 + i*(2*Math.PI/5);
+    pts.push({
+      x: cx + Math.cos(ang)*(radius*0.75 + Math.sin(i*3 + time*0.01)*3),
+      y: cy + Math.sin(ang)*(radius*0.75 + Math.cos(i*4 + time*0.01)*3)
+    });
+  }
+  // star path (connect 0->2->4->1->3->0)
+  const order = [0,2,4,1,3,0];
+  for(let i=0;i<order.length;i++){
+    const p = pts[order[i]];
+    if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+  }
+  ctx.stroke();
+
+  // inner glitch eye (stylized)
+  ctx.globalAlpha = 0.98;
+  const eyeW = radius*0.45, eyeH = radius*0.2;
+  // white circle pupil glow
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, eyeW*0.18, eyeW*0.18, 0, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.fill();
+
+  // iris ring
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, eyeW*0.55, eyeH*0.9, 0, 0, Math.PI*2);
+  ctx.strokeStyle = '#8ff2ff';
+  ctx.stroke();
+
+  // eye outline (glitchy shape)
+  ctx.lineWidth = 2.4;
+  ctx.strokeStyle = '#0cf0ff';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, eyeW, eyeH, 0, 0, Math.PI*2);
+  ctx.stroke();
+
+  // extra subtle circuit-lines inside center
+  ctx.globalAlpha = 0.16;
+  ctx.lineWidth = 1.0;
+  for(let i=0;i<8;i++){
+    const ang = rand(0,Math.PI*2);
+    ctx.beginPath();
+    const sx = cx + Math.cos(ang)*rand(eyeW*0.2, eyeW*0.6);
+    const sy = cy + Math.sin(ang)*rand(eyeH*0.2, eyeH*0.6);
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(sx + rand(-8,8), sy + rand(-6,6));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// Strong horizontal glitch strips + RGB split effect
+function applyGlitchEffect(offCanvas, t) {
+  const gctx = offCanvas.getContext('2d');
+  const img = gctx.getImageData(0,0,offCanvas.width,offCanvas.height);
+  const data = img.data;
+  const Hseg = Math.floor(6 + Math.abs(Math.sin(t*0.002))*18);
+  // horizontal displacement bands
+  for(let band=0; band < Hseg; band++){
+    const y0 = Math.floor(band * offCanvas.height / Hseg);
+    const h = Math.floor(rand(2, 18));
+    const shift = Math.floor(Math.sin((t*0.01 + band)*0.6)*20 + rand(-28,28));
+    if(Math.random() < 0.55){
+      // shift line pixels horizontally
+      for(let y=y0; y < Math.min(offCanvas.height, y0+h); y++){
+        const row = y * offCanvas.width * 4;
+        const tmp = new Uint8ClampedArray(offCanvas.width*4);
+        for(let x=0;x<offCanvas.width;x++){
+          const idx = row + x*4;
+          let nx = clamp(x + shift, 0, offCanvas.width-1);
+          const nidx = row + nx*4;
+          tmp[x*4] = data[nidx];
+          tmp[x*4+1] = data[nidx+1];
+          tmp[x*4+2] = data[nidx+2];
+          tmp[x*4+3] = data[nidx+3];
+        }
+        // write back
+        for(let x=0;x<offCanvas.width;x++){
+          const idx = row + x*4;
+          data[idx] = tmp[x*4];
+          data[idx+1] = tmp[x*4+1];
+          data[idx+2] = tmp[x*4+2];
+        }
+      }
+    }
+  }
+
+  // RGB chromatic split around edges (subtle)
+  const split = Math.floor(1 + Math.sin(t*0.003)*3);
+  for(let y=0;y<offCanvas.height;y++){
+    for(let x=0;x<offCanvas.width;x++){
+      const i = (y*offCanvas.width + x)*4;
+      // push blue slightly offset
+      const ox = clamp(x + split + Math.floor(Math.sin(y*0.02+t*0.0005)*4), 0, offCanvas.width-1);
+      const idxB = (y*offCanvas.width + ox)*4;
+      const b = data[idxB+2];
+      data[i+2] = Math.max(data[i+2], b);
+      // desaturate a bit to create cold-blue vibe
+      const avg = (data[i]+data[i+1]+data[i+2])/3;
+      data[i] = data[i]*0.35 + avg*0.65;
+      data[i+1] = data[i+1]*0.6 + avg*0.4;
+    }
+  }
+
+  gctx.putImageData(img,0,0);
+}
+
+// Small overlays: scratches & vignette
+function paintOverlays() {
+  // vignette
+  const vg = ctx.createRadialGradient(W/2,H/2, 0, W/2,H/2, Math.max(W,H)/1.2);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(0.7, 'rgba(0,0,0,0.25)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.7)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0,0,W,H);
+
+  // red micro sparks (very subtle)
+  ctx.save();
+  ctx.globalAlpha = 0.07;
+  for(let i=0;i<14;i++){
+    const x = rand(W*0.05, W*0.95);
+    const y = rand(H*0.05, H*0.95);
+    ctx.beginPath();
+    ctx.arc(x,y,rand(0.5,2.6),0,Math.PI*2);
+    ctx.fillStyle = 'rgba(200,16,24,0.9)';
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Main render loop
+let time = 0;
+const off = document.createElement('canvas');
+off.width = W; off.height = H;
+
+function render() {
+  time += 16;
+  // paint base to offscreen canvas first
+  const octx = off.getContext('2d');
+  // clear
+  octx.fillStyle = '#000010';
+  octx.fillRect(0,0,W,H);
+
+  // call drawing functions but on offscreen
+  // replicate functions using octx temporarily
+  // slightly randomize each frame for organic glitch
+  paintBackgroundOff(octx);
+  drawCircuitLinesOff(octx);
+  drawCentralSymbolOff(octx, time);
+
+  // strong glitch processing
+  applyGlitchEffect(off, time);
+
+  // final: draw offscreen to main canvas
+  ctx.clearRect(0,0,W,H);
+  ctx.drawImage(off, 0, 0);
+
+  // final overlays on main
+  paintOverlays();
+
+  // occasional heavy glitch flashes
+  if(Math.random() < 0.03) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = 'rgba(0,200,255,0.03)';
+    ctx.fillRect(rand(0,W*0.2), rand(0,H*0.9), rand(W*0.2, W*0.6), rand(6, 60));
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  requestAnimationFrame(render);
+}
+
+/* ===== Offscreen variants: they reuse same logic but use provided context ===== */
+function paintBackgroundOff(octx){
+  const g = octx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0, '#021015');
+  g.addColorStop(0.6, '#00121a');
+  g.addColorStop(1, '#000006');
+  octx.fillStyle = g;
+  octx.fillRect(0,0,W,H);
+
+  const img = octx.createImageData(W,H);
+  for(let i=0;i<img.data.length;i+=4){
+    const v = Math.floor(4 + Math.random()*20);
+    img.data[i] = v+2; img.data[i+1] = v+10; img.data[i+2] = v+16; img.data[i+3] = 255;
+  }
+  const tmp = document.createElement('canvas');
+  tmp.width=W; tmp.height=H;
+  tmp.getContext('2d').putImageData(img,0,0);
+  octx.globalAlpha = 0.045;
+  octx.drawImage(tmp,0,0);
+  octx.globalAlpha = 1;
+}
+
+function drawCircuitLinesOff(octx){
+  octx.save();
+  octx.globalCompositeOperation = 'lighter';
+  octx.lineWidth = 1.3;
+  octx.strokeStyle = '#0fe0ff';
+  octx.globalAlpha = 0.16;
+
+  const rows = 10, cols = Math.floor(rows * (W/H));
+  const spacingX = W / cols, spacingY = H / rows;
+
+  function drawBranchLocal(ctxLocal,x,y,depth,angle,strength) {
+    if(depth<=0) return;
+    const len = 18 + 28*strength + rand(-8,12);
+    const nx = x + Math.cos(angle)*(len*(0.8+0.6*strength));
+    const ny = y + Math.sin(angle)*(len*(0.8+0.6*strength));
+    ctxLocal.beginPath();
+    ctxLocal.moveTo(x,y);
+    ctxLocal.lineTo(nx,ny);
+    ctxLocal.stroke();
+    if(Math.random() < 0.12) {
+      ctxLocal.beginPath();
+      ctxLocal.arc(nx,ny,0.9+Math.random()*1.6,0,Math.PI*2);
+      ctxLocal.fillStyle = '#09c7ff';
+      ctxLocal.fill();
+    }
+    if(Math.random() < 0.9) drawBranchLocal(ctxLocal,nx,ny,depth-1, angle + rand(-0.8,0.8), strength*0.82);
+    if(Math.random() < 0.45) drawBranchLocal(ctxLocal,nx,ny,Math.max(0,depth-2), angle + rand(-1.6,1.6), strength*0.6);
+  }
+
+  for(let y=0;y<=rows;y++){
+    for(let x=0;x<=cols;x++){
+      const cx = Math.floor(x*spacingX + rand(-spacingX*0.15, spacingX*0.15));
+      const cy = Math.floor(y*spacingY + rand(-spacingY*0.15, spacingY*0.15));
+      drawBranchLocal(octx, cx, cy, Math.floor(rand(2,5)), Math.PI*rand(), 0.9);
+    }
+  }
+
+  octx.restore();
+}
+
+function drawCentralSymbolOff(octx, timeLocal){
+  octx.save();
+  const cx = W*0.5, cy = H*0.5;
+  const radius = Math.min(W,H)*0.27;
+
+  const g = octx.createRadialGradient(cx,cy, radius*0.45, cx,cy, radius*1.6);
+  g.addColorStop(0, 'rgba(10,220,255,0.10)');
+  g.addColorStop(0.6, 'rgba(6,80,110,0.02)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  octx.fillStyle = g;
+  octx.fillRect(cx-radius*1.6, cy-radius*1.6, radius*3.2, radius*3.2);
+
+  octx.lineWidth = 6 + Math.sin(timeLocal*0.002)*0.8;
+  octx.strokeStyle = '#06d1ff';
+  octx.globalAlpha = 0.98;
+  octx.beginPath();
+  for(let a=0;a<Math.PI*2;a+=0.02) {
+    const r = radius + Math.sin(a*24 + timeLocal*0.006)*2.3 + rand(-0.8,0.8);
+    const x = cx + Math.cos(a)*r;
+    const y = cy + Math.sin(a)*r;
+    if(a===0) octx.moveTo(x,y); else octx.lineTo(x,y);
+  }
+  octx.closePath();
+  octx.stroke();
+
+  octx.lineWidth = 5;
+  octx.strokeStyle = '#9ff8ff';
+  octx.beginPath();
+  const pts = [];
+  for(let i=0;i<5;i++){
+    const ang = -Math.PI/2 + i*(2*Math.PI/5);
+    pts.push({
+      x: cx + Math.cos(ang)*(radius*0.75 + Math.sin(i*3 + timeLocal*0.01)*3),
+      y: cy + Math.sin(ang)*(radius*0.75 + Math.cos(i*4 + timeLocal*0.01)*3)
+    });
+  }
+  const order = [0,2,4,1,3,0];
+  for(let i=0;i<order.length;i++){
+    const p = pts[order[i]];
+    if(i===0) octx.moveTo(p.x,p.y); else octx.lineTo(p.x,p.y);
+  }
+  octx.stroke();
+
+  octx.globalAlpha = 0.98;
+  const eyeW = radius*0.45, eyeH = radius*0.2;
+  octx.beginPath();
+  octx.ellipse(cx, cy, eyeW*0.18, eyeW*0.18, 0, 0, Math.PI*2);
+  octx.fillStyle = 'rgba(255,255,255,0.95)';
+  octx.fill();
+
+  octx.lineWidth = 2.2;
+  octx.beginPath();
+  octx.ellipse(cx, cy, eyeW*0.55, eyeH*0.9, 0, 0, Math.PI*2);
+  octx.strokeStyle = '#8ff2ff';
+  octx.stroke();
+
+  octx.lineWidth = 2.4;
+  octx.strokeStyle = '#0cf0ff';
+  octx.beginPath();
+  octx.ellipse(cx, cy, eyeW, eyeH, 0, 0, Math.PI*2);
+  octx.stroke();
+
+  octx.globalAlpha = 0.16;
+  octx.lineWidth = 1.0;
+  for(let i=0;i<8;i++){
+    const ang = rand(0,Math.PI*2);
+    octx.beginPath();
+    const sx = cx + Math.cos(ang)*rand(eyeW*0.2, eyeW*0.6);
+    const sy = cy + Math.sin(ang)*rand(eyeH*0.2, eyeH*0.6);
+    octx.moveTo(cx,cy);
+    octx.lineTo(sx + rand(-8,8), sy + rand(-6,6));
+    octx.stroke();
+  }
+  octx.restore();
+}
+
+/* ===== start render ===== */
+render();
+
+/* ===== download button ===== */
+document.getElementById('download').addEventListener('click', ()=>{
+  // generate a higher-contrast final snapshot
+  const link = document.createElement('a');
+  link.download = 'portada_glitch_geo_blue.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+</script>
+</body>
+</html>

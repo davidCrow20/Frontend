@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin | Metal Costa Rica</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        .admin-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+        }
+
+        .admin-nav button {
+            background: #222;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .admin-nav button.active {
+            background: var(--accent-red);
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="admin-container">
+        <h1>Panel de Administración</h1>
+        <a href="index.html"
+            style="color: var(--accent-purple); text-decoration: none; margin-bottom: 20px; display: inline-block;">←
+            Volver al sitio</a>
+
+        <div class="admin-nav">
+            <button onclick="showSection('bandas')" class="active" id="btn-bandas">Bandas</button>
+            <button onclick="showSection('historias')" id="btn-historias">Historias</button>
+            <button onclick="showSection('fotos')" id="btn-fotos">Lugares/Fotos</button>
+            <button onclick="showSection('noticias')" id="btn-noticias">Noticias/Artículos</button>
+        </div>
+
+        <!-- Formulario Bandas -->
+        <section id="section-bandas" class="form-section active">
+            <h2>Gestionar Bandas</h2>
+            <div class="form-group" style="background: #222; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <label style="color: #fff;">Seleccionar Acción</label>
+                <select id="edit-banda-select" class="form-control" style="background: #111;"
+                    onchange="handleBandaSelection()">
+                    <option value="">➕ Crear Nueva Banda</option>
+                    <!-- Opciones de bandas a editar se cargarán por JS -->
+                </select>
+            </div>
+            <form id="formBanda" style="border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 20px;">
+                <h3 id="banda-form-title">1. Crear Banda</h3>
+                <input type="hidden" id="edit-banda-id" value="">
+                <div class="form-group">
+                    <label>Nombre de la Banda</label>
+                    <input type="text" id="b-nombre" class="form-control" required placeholder="Ej: Adrenalina">
+                </div>
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label>Género</label>
+                        <input type="text" id="b-genero" class="form-control" placeholder="Ej: Black Metal">
+                    </div>
+                    <div>
+                        <label>Provincia</label>
+                        <input type="text" id="b-provincia" class="form-control" placeholder="Ej: San José">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Foto Principal (URL)</label>
+                    <input type="url" id="b-foto" class="form-control" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Video URL (YouTube/Vimeo)</label>
+                    <input type="url" id="b-video" class="form-control"
+                        placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                <div class="form-group">
+                    <label>Biografía</label>
+                    <textarea id="b-bio" class="form-control" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Discografía (Texto libre)</label>
+                    <textarea id="b-disco" class="form-control" rows="2"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn-primary">Guardar Banda</button>
+                    <button type="button" id="btn-delete-banda" class="btn-primary" style="background: #661111; display: none;" onclick="deleteCurrentBanda()">Eliminar Banda</button>
+                </div>
+            </form>
+
+            <form id="formFotoBanda">
+                <h3>2. Agregar Fotos a la Banda</h3>
+                <div class="form-group">
+                    <label>Seleccionar Banda</label>
+                    <select id="fb-banda-id" class="form-control" required>
+                        <option value="">Cargando bandas...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Imágenes desde tu PC <span style="color:#777;font-size:0.85rem;">(puedes seleccionar varias)</span></label>
+                    <input type="file" id="fb-file" class="form-control" accept="image/*" multiple onchange="previewImagenes('fb-file','fb-preview')" required>
+                    <div id="fb-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+                </div>
+                <div class="form-group">
+                    <label>Descripción de la foto</label>
+                    <input type="text" id="fb-desc" class="form-control">
+                </div>
+                <button type="submit" class="btn-primary" style="background: var(--accent-purple);">Subir Foto a Banda</button>
+            </form>
+            <div id="manage-banda-photos" style="margin-top: 20px; display: none;">
+                <h3>Gestionar Fotos de la Galería</h3>
+                <div id="banda-photos-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;"></div>
+            </div>
+        </section>
+
+        <!-- Formulario Historias -->
+        <section id="section-historias" class="form-section">
+            <h2>Agregar Historia / Leyenda</h2>
+            <form id="formHistoria">
+                <div class="form-group">
+                    <label>Título</label>
+                    <input type="text" id="h-titulo" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Contenido</label>
+                    <textarea id="h-contenido" class="form-control" rows="6"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Foto (URL)</label>
+                    <input type="url" id="h-foto" class="form-control">
+                </div>
+                <button type="submit" class="btn-primary">Publicar Historia</button>
+            </form>
+            <div id="list-historias" style="margin-top: 30px;">
+                <h3>Gestionar Historias Existentes</h3>
+                <div id="historias-db-list"></div>
+            </div>
+        </section>
+
+        <!-- Formulario Fotos/Lugares -->
+        <section id="section-fotos" class="form-section">
+            <h2>Gestionar Lugares</h2>
+            <form id="formLugar" style="border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 20px;">
+                <h3>1. Crear Nuevo Lugar</h3>
+                <div class="form-group">
+                    <label>Nombre del Lugar</label>
+                    <input type="text" id="l-nombre" class="form-control" required placeholder="Ej: Sanatorio Durán">
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="l-desc" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Foto Portada (URL)</label>
+                    <input type="url" id="l-foto" class="form-control" placeholder="https://...">
+                </div>
+                <button type="submit" class="btn-primary">Crear Lugar</button>
+            </form>
+
+            <form id="formFoto">
+                <h3>2. Agregar Foto a Galería</h3>
+                <div class="form-group">
+                    <label>Seleccionar Lugar</label>
+                    <select id="f-lugar-id" class="form-control" required>
+                        <option value="">Cargando lugares...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Imágenes desde tu PC <span style="color:#777;font-size:0.85rem;">(puedes seleccionar varias)</span></label>
+                    <input type="file" id="f-file" class="form-control" accept="image/*" multiple onchange="previewImagenes('f-file','f-preview')" required>
+                    <div id="f-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+                </div>
+                <div class="form-group">
+                    <label>Breve descripción de la foto</label>
+                    <input type="text" id="f-desc" class="form-control">
+                </div>
+                <button type="submit" class="btn-primary" style="background: var(--accent-purple);">Subir Foto al Lugar</button>
+            </form>
+            <div id="manage-place-photos" style="margin-top: 20px; display: none;">
+                <h3>Gestionar Fotos de la Galería</h3>
+                <div id="place-photos-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;"></div>
+            </div>
+            <div id="list-lugares" style="margin-top: 30px;">
+                <h3>Gestionar Lugares Existentes</h3>
+                <div id="lugares-db-list"></div>
+            </div>
+        </section>
+
+        <!-- Formulario Noticias -->
+        <section id="section-noticias" class="form-section">
+            <h2>Agregar Noticia o Artículo</h2>
+            <form id="formNoticia">
+                <div class="form-group">
+                    <label>Título</label>
+                    <input type="text" id="n-titulo" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Enlace</label>
+                    <input type="url" id="n-enlace" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="n-tipo" class="form-control">
+                        <option value="noticia">Noticia</option>
+                        <option value="articulo">Artículo</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Agregar</button>
+            </form>
+            <div id="list-noticias" style="margin-top: 30px;">
+                <h3>Gestionar contenido</h3>
+                <div id="noticias-db-list"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+            ? "http://localhost:3000" 
+            : "https://metal-archive-backend.onrender.com"; 
+
+        async function loadLugarSelect() {
+            try {
+                const res = await fetch(`${API_BASE}/lugares`);
+                const data = await res.json();
+                const select = document.getElementById('f-lugar-id');
+                select.innerHTML = '<option value="">-- Elige un lugar --</option>' +
+                    data.map(l => `<option value="${l.id}">${l.nombre}</option>`).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadBandaSelect() {
+            try {
+                const res = await fetch(`${API_BASE}/bandas`);
+                const data = await res.json();
+
+                const selectFotos = document.getElementById('fb-banda-id');
+                selectFotos.innerHTML = '<option value="">-- Elige una banda --</option>' +
+                    data.map(b => `<option value="${b.id}">${b.nombre}</option>`).join('');
+
+                const selectEdit = document.getElementById('edit-banda-select');
+                selectEdit.innerHTML = '<option value="">➕ Crear Nueva Banda</option>' +
+                    data.map(b => `<option value="${b.id}">✏️ Editar: ${b.nombre}</option>`).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function handleBandaSelection() {
+            const id = document.getElementById('edit-banda-select').value;
+            const formTitle = document.getElementById('banda-form-title');
+            const hiddenId = document.getElementById('edit-banda-id');
+            const form = document.getElementById('formBanda');
+
+            if (!id) {
+                formTitle.innerText = "1. Crear Banda";
+                hiddenId.value = "";
+                form.reset();
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/bandas/${id}`);
+                const data = await res.json();
+                formTitle.innerText = `1. Editando Banda: ${data.nombre}`;
+                hiddenId.value = data.id;
+
+                document.getElementById('b-nombre').value = data.nombre || '';
+                document.getElementById('b-genero').value = data.genero || '';
+                document.getElementById('b-provincia').value = data.provincia || '';
+                document.getElementById('b-foto').value = data.foto_principal || '';
+                document.getElementById('b-video').value = data.video_url || '';
+                document.getElementById('b-bio').value = data.biografia || '';
+                document.getElementById('b-disco').value = data.discografia || '';
+            } catch (e) {
+                console.error("Error al cargar datos de la banda", e);
+            }
+        }
+
+        async function deleteCurrentBanda() {
+            const id = document.getElementById('edit-banda-id').value;
+            if (!id || !confirm("¿Estás seguro de eliminar esta banda y todas sus fotos?")) return;
+            try {
+                const res = await fetch(`${API_BASE}/bandas/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    alert("Banda eliminada");
+                    location.reload();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteItem(endpoint, id, callback) {
+            if (!confirm("¿Eliminar este elemento?")) return;
+            try {
+                const res = await fetch(`${API_BASE}/${endpoint}/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    alert("Eliminado");
+                    if (callback) callback();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadStoriesList() {
+            const res = await fetch(`${API_BASE}/historias`);
+            const data = await res.json();
+            const list = document.getElementById('historias-db-list');
+            list.innerHTML = data.map(i => `
+                <div style="background:#111; padding:10px; border-radius:5px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>${i.titulo}</span>
+                    <button onclick="deleteItem('historias', ${i.id}, loadStoriesList)" style="background:#611; color:#fff; border:none; padding:5px 10px; cursor:pointer;">Eliminar</button>
+                </div>
+            `).join('');
+        }
+
+        async function loadPlacesList() {
+            const res = await fetch(`${API_BASE}/lugares`);
+            const data = await res.json();
+            const list = document.getElementById('lugares-db-list');
+            list.innerHTML = data.map(i => `
+                <div style="background:#111; padding:10px; border-radius:5px; margin-bottom:5px; border-left: 4px solid var(--accent-red);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong>${i.nombre}</strong>
+                        <button onclick="deleteItem('lugares', ${i.id}, loadPlacesList)" style="background:#611; color:#fff; border:none; padding:5px 10px; cursor:pointer;">Eliminar Lugar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadNoticiasList() {
+            const res = await fetch(`${API_BASE}/noticias`);
+            const data = await res.json();
+            const list = document.getElementById('noticias-db-list');
+            list.innerHTML = data.map(i => `
+                <div style="background:#111; padding:10px; border-radius:5px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>[${i.tipo}] ${i.titulo}</span>
+                    <button onclick="deleteItem('noticias', ${i.id}, loadNoticiasList)" style="background:#611; color:#fff; border:none; padding:5px 10px; cursor:pointer;">Eliminar</button>
+                </div>
+            `).join('');
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.admin-nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`section-${id}`).classList.add('active');
+            document.getElementById(`btn-${id}`).classList.add('active');
+            if (id === 'fotos') loadPlacesList();
+            if (id === 'bandas') loadBandaSelect();
+            if (id === 'historias') loadStoriesList();
+            if (id === 'noticias') loadNoticiasList();
+        }
+
+        // Modificar handleBandaSelection para mostrar botón eliminar
+        const originalHandleBandaSelection = handleBandaSelection;
+        handleBandaSelection = async function() {
+            await originalHandleBandaSelection();
+            const id = document.getElementById('edit-banda-select').value;
+            document.getElementById('btn-delete-banda').style.display = id ? 'block' : 'none';
+        }
+
+        async function sendData(endpoint, data, form, method = 'POST') {
+            try {
+                const res = await fetch(`${API_BASE}/${endpoint}`, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert("Guardado correctamente!");
+                    form.reset();
+                    if (endpoint.includes('lugares')) loadLugarSelect();
+                    if (endpoint.includes('bandas')) {
+                        loadBandaSelect();
+                        document.getElementById('edit-banda-id').value = "";
+                        document.getElementById('banda-form-title').innerText = "1. Crear Banda";
+                        document.getElementById('edit-banda-select').value = "";
+                    }
+                } else {
+                    const err = await res.json();
+                    alert("Error: " + err.error);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error de conexión");
+            }
+        }
+
+        document.getElementById('formBanda').onsubmit = (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-banda-id').value;
+            const endpoint = id ? `bandas/${id}` : 'bandas';
+            const method = id ? 'PUT' : 'POST';
+
+            sendData(endpoint, {
+                nombre: document.getElementById('b-nombre').value,
+                genero: document.getElementById('b-genero').value,
+                provincia: document.getElementById('b-provincia').value,
+                foto_principal: document.getElementById('b-foto').value,
+                video_url: document.getElementById('b-video').value,
+                biografia: document.getElementById('b-bio').value,
+                discografia: document.getElementById('b-disco').value
+            }, e.target, method);
+        };
+
+        // Vista previa de múltiples imágenes
+        function previewImagenes(inputId, previewId) {
+            const files = document.getElementById(inputId).files;
+            const container = document.getElementById(previewId);
+            container.innerHTML = '';
+            Array.from(files).forEach(file => {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.style.cssText = 'width:100px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #333;';
+                container.appendChild(img);
+            });
+        }
+
+        // Subida de múltiples fotos de banda
+        document.getElementById('formFotoBanda').onsubmit = async (e) => {
+            e.preventDefault();
+            const bandaId = document.getElementById('fb-banda-id').value;
+            if (!bandaId) return alert('Selecciona una banda primero.');
+            const fileInput = document.getElementById('fb-file');
+            if (!fileInput.files.length) return alert('Selecciona al menos una imagen.');
+
+            const fd = new FormData();
+            Array.from(fileInput.files).forEach(f => fd.append('imagenes', f));
+            fd.append('descripcion', document.getElementById('fb-desc').value);
+
+            try {
+                const res = await fetch(`${API_BASE}/bandas/${bandaId}/fotos`, {
+                    method: 'POST', body: fd
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`¡${data.fotos.length} foto(s) subida(s) correctamente!`);
+                    e.target.reset();
+                    document.getElementById('fb-preview').innerHTML = '';
+                    loadBandPhotos(); // Refrescar lista de fotos
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) { alert('Error de conexión'); }
+        };
+
+        document.getElementById('formHistoria').onsubmit = (e) => {
+            e.preventDefault();
+            sendData('historias', {
+                titulo: document.getElementById('h-titulo').value,
+                contenido: document.getElementById('h-contenido').value,
+                foto: document.getElementById('h-foto').value
+            }, e.target);
+        };
+
+        document.getElementById('formLugar').onsubmit = (e) => {
+            e.preventDefault();
+            sendData('lugares', {
+                nombre: document.getElementById('l-nombre').value,
+                descripcion: document.getElementById('l-desc').value,
+                foto_portada: document.getElementById('l-foto').value
+            }, e.target);
+        };
+
+        // Subida de múltiples fotos de lugar
+        document.getElementById('formFoto').onsubmit = async (e) => {
+            e.preventDefault();
+            const lugarId = document.getElementById('f-lugar-id').value;
+            if (!lugarId) return alert('Selecciona un lugar primero.');
+            const fileInput = document.getElementById('f-file');
+            if (!fileInput.files.length) return alert('Selecciona al menos una imagen.');
+
+            const fd = new FormData();
+            Array.from(fileInput.files).forEach(f => fd.append('imagenes', f));
+            fd.append('descripcion', document.getElementById('f-desc').value);
+
+            try {
+                const res = await fetch(`${API_BASE}/lugares/${lugarId}/fotos`, {
+                    method: 'POST', body: fd
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`¡${data.fotos.length} foto(s) subida(s) correctamente!`);
+                    e.target.reset();
+                    document.getElementById('f-preview').innerHTML = '';
+                    loadPlacePhotos(); // Refrescar lista de fotos
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) { alert('Error de conexión'); }
+        };
+
+        // --- GESTIÓN DE FOTOS INDIVIDUALES ---
+        async function loadBandPhotos() {
+            const bandaId = document.getElementById('fb-banda-id').value;
+            const container = document.getElementById('manage-banda-photos');
+            const list = document.getElementById('banda-photos-list');
+            if (!bandaId) {
+                container.style.display = 'none';
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/bandas/${bandaId}`);
+                const data = await res.json();
+                container.style.display = 'block';
+                list.innerHTML = data.fotos.map(f => `
+                    <div style="position:relative; background:#111; border-radius:5px; padding:5px; text-align:center; border: 1px solid #333;">
+                        <img src="${imgUrl(f.url)}" style="width:100%; height:80px; object-fit:cover; border-radius:3px;">
+                        <button onclick="deleteItem('fotos_bandas', ${f.id}, loadBandPhotos)" style="position:absolute; top:2px; right:2px; background:#f00; color:#fff; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-weight:bold;">X</button>
+                    </div>
+                `).join('') || '<p style="grid-column: 1/-1;">Sin fotos aún.</p>';
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadPlacePhotos() {
+            const lugarId = document.getElementById('f-lugar-id').value;
+            const container = document.getElementById('manage-place-photos');
+            const list = document.getElementById('place-photos-list');
+            if (!lugarId) {
+                container.style.display = 'none';
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/lugares/${lugarId}`);
+                const data = await res.json();
+                container.style.display = 'block';
+                list.innerHTML = data.fotos.map(f => `
+                    <div style="position:relative; background:#111; border-radius:5px; padding:5px; text-align:center; border: 1px solid #333;">
+                        <img src="${imgUrl(f.url)}" style="width:100%; height:80px; object-fit:cover; border-radius:3px;">
+                        <button onclick="deleteItem('fotos_lugares', ${f.id}, loadPlacePhotos)" style="position:absolute; top:2px; right:2px; background:#f00; color:#fff; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-weight:bold;">X</button>
+                    </div>
+                `).join('') || '<p style="grid-column: 1/-1;">Sin fotos aún.</p>';
+            } catch (e) { console.error(e); }
+        }
+
+        document.getElementById('fb-banda-id').addEventListener('change', loadBandPhotos);
+        document.getElementById('f-lugar-id').addEventListener('change', loadPlacePhotos);
+
+        function imgUrl(url) {
+            if (!url) return '';
+            if (url.startsWith('/uploads/') || url.startsWith('/imagenes/')) return API_BASE + url;
+            return url;
+        }
+
+        document.getElementById('formNoticia').onsubmit = (e) => {
+            e.preventDefault();
+            sendData('noticias', {
+                titulo: document.getElementById('n-titulo').value,
+                enlace: document.getElementById('n-enlace').value,
+                tipo: document.getElementById('n-tipo').value
+            }, e.target);
+        };
+    </script>
+
+</body>
+
+</html>

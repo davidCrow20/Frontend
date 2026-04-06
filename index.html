@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metal Costa Rica | Inicio</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .home {
+            text-align: center;
+            z-index: 10;
+        }
+
+        .glitch {
+            font-size: 5rem;
+            color: #ff0000;
+            position: relative;
+            text-transform: uppercase;
+            font-family: 'Morvanh', cursive;
+            margin: 0;
+            cursor: default;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            width: 100%;
+            clip: rect(0, 0, 0, 0);
+        }
+
+        .glitch::before {
+            left: 2px;
+            text-shadow: -2px 0 #ff0000;
+            animation: glitch-anim-1 2s infinite linear alternate-reverse;
+        }
+
+        .glitch::after {
+            left: -2px;
+            text-shadow: -2px 0 #00ffff;
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim-1 {
+            0% { clip: rect(10px, 9999px, 50px, 0); }
+            20% { clip: rect(30px, 9999px, 100px, 0); }
+            40% { clip: rect(60px, 9999px, 40px, 0); }
+            60% { clip: rect(10px, 9999px, 80px, 0); }
+            80% { clip: rect(50px, 9999px, 20px, 0); }
+            100% { clip: rect(90px, 9999px, 60px, 0); }
+        }
+
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(50px, 9999px, 10px, 0); }
+            20% { clip: rect(10px, 9999px, 60px, 0); }
+            40% { clip: rect(80px, 9999px, 10px, 0); }
+            60% { clip: rect(40px, 9999px, 90px, 0); }
+            80% { clip: rect(20px, 9999px, 50px, 0); }
+            100% { clip: rect(60px, 9999px, 70px, 0); }
+        }
+
+        .pentagram-container {
+            width: 250px;
+            height: 250px;
+            margin: 40px auto;
+            animation: pulse-blue 2.5s infinite ease-in-out;
+            filter: drop-shadow(0 0 15px #00ffff);
+        }
+
+        .pentagram-svg {
+            width: 100%;
+            height: 100%;
+            fill: none;
+            stroke: #00ffff;
+            stroke-width: 2;
+            transform: rotate(180deg);
+            transform-origin: center;
+        }
+
+        @keyframes pulse-blue {
+            0% { transform: scale(1); opacity: 0.7; filter: drop-shadow(0 0 5px #00ffff); }
+            50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 25px #00ffff); }
+            100% { transform: scale(1); opacity: 0.7; filter: drop-shadow(0 0 5px #00ffff); }
+        }
+
+        .home-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 50px;
+        }
+
+        .home-buttons a {
+            text-decoration: none;
+            color: #fff;
+            border: 1px solid #00ffff;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-family: 'Rajdhani', sans-serif;
+            transition: all 0.3s ease;
+            background: rgba(0, 255, 255, 0.05);
+        }
+
+        .home-buttons a:hover {
+            background: #00ffff;
+            color: #000;
+            box-shadow: 0 0 20px #00ffff;
+            transform: translateY(-5px);
+        }
+
+        /* Background Noise/Grid Effect */
+        .background-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 255, 0.02), rgba(255, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-overlay"></div>
+    <div class="home">
+        <h1 class="glitch" data-text="METAL COSTA RICA">METAL COSTA RICA</h1>
+
+        <div class="pentagram-container">
+            <svg class="pentagram-svg" viewBox="0 0 100 100">
+                <!-- Polígono de la estrella -->
+                <polygon points="50,2.5 61.2,35.3 97.4,35.3 68.1,56.6 79.3,89.4 50,68.1 20.7,89.4 31.9,56.6 2.6,35.3 38.8,35.3" />
+                <!-- Círculo que encierra la estrella -->
+                <circle cx="50" cy="50" r="47" />
+            </svg>
+        </div>
+
+        <div class="home-buttons">
+            <a href="bandas.html">Bandas</a>
+            <a href="historias.html">Historias</a>
+            <a href="fotos.html">Fotos</a>
+            <a href="admin.html">Admin</a>
+        </div>
+    </div>
+</body>
+</html>

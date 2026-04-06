@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bandas | Metal Costa Rica</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<div class="parent">
+    <header class="div1 header">
+        <h1 style="cursor:pointer;" onclick="location.href='index.html'">Metal Costa Rica</h1>
+        <p class="subtitle">Directorio de Bandas</p>
+    </header>
+
+    <nav class="div4 nav">
+        <a href="index.html">Inicio</a>
+        <a href="bandas.html" class="nav-link active">Bandas</a>
+        <a href="historias.html">Historias</a>
+        <a href="fotos.html">Fotos</a>
+        <a href="admin.html">Admin</a>
+    </nav>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Buscar bandas..." onkeyup="handleSearch(event)">
+    </div>
+
+    <aside class="sidebar-section sidebar-left">
+        <h2>Noticias</h2>
+        <div id="newsContainer"><p>Cargando...</p></div>
+    </aside>
+
+    <main class="content" id="mainContent">
+        <p>Cargando bandas...</p>
+    </main>
+
+    <aside class="sidebar-section sidebar-right">
+        <h2>Artículos</h2>
+        <div id="articlesContainer"><p>Cargando...</p></div>
+    </aside>
+
+    <footer class="div9 footer">
+        <p>© 2024 Metal Costa Rica</p>
+    </footer>
+</div>
+
+<script>
+    const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+        ? "http://localhost:3000" 
+        : "https://metal-archive-backend.onrender.com"; // Reemplaza con tu URL de Render
+
+    async function loadContent() {
+        fetchBands();
+        fetchNews();
+    }
+
+    function imgUrl(url) {
+        if (!url) return '';
+        if (url.startsWith('/uploads/') || url.startsWith('/imagenes/')) return API_BASE + url;
+        return url;
+    }
+
+    async function fetchBands() {
+        try {
+            const res = await fetch(`${API_BASE}/bandas`);
+            const data = await res.json();
+            renderCards(data, 'band');
+        } catch (e) { console.error(e); }
+    }
+
+    async function fetchNews() {
+        try {
+            const res = await fetch(`${API_BASE}/noticias`);
+            const data = await res.json();
+            renderSidebar('newsContainer', data.filter(i => i.tipo === 'noticia'));
+            renderSidebar('articlesContainer', data.filter(i => i.tipo === 'articulo'));
+        } catch (e) { console.error(e); }
+    }
+
+    function renderCards(items, type) {
+        const container = document.getElementById('mainContent');
+        container.innerHTML = items.map(item => `
+            <div class="card" onclick="location.href='detalle.html?type=${type}&id=${item.id}'">
+                <img src="${imgUrl(item.foto_principal || item.foto) || 'https://placehold.co/400x250/111/da0b0b?text=Dark+Archive'}" class="card-img">
+                <div class="card-body">
+                    <h3 class="card-title">${item.nombre || item.titulo}</h3>
+                    <p class="card-text">${item.genero || item.provincia || ''}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderSidebar(id, items) {
+        document.getElementById(id).innerHTML = items.map(i => `
+            <div class="news-item">
+                <h3 onclick="window.open('${i.enlace}', '_blank')">${i.titulo}</h3>
+                <p>${i.descripcion || ''}</p>
+            </div>
+        `).join('') || '<p>No hay contenido.</p>';
+    }
+
+    async function handleSearch(event) {
+        const q = event.target.value;
+        if (q.length < 2) { if(q.length===0) fetchBands(); return; }
+        const res = await fetch(`${API_BASE}/buscar?q=${q}`);
+        const data = await res.json();
+        renderCards(data.bands, 'band');
+    }
+
+    window.onload = loadContent;
+</script>
+</body>
+</html>
