@@ -233,7 +233,16 @@
     <script>
         const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
             ? "http://localhost:3000" 
-            : "https://metal-archive-backend.onrender.com"; 
+            : "https://metal-cr-frontend-2.onrender.com"; 
+
+        // ------------------ AUTENTICACIÓN ------------------
+        let adminPassword = sessionStorage.getItem('adminPassword');
+        if (!adminPassword) {
+            adminPassword = prompt("Para hacer cambios, ingresa la Contraseña Maestra (si no la tienes, cancela):");
+            if (adminPassword) {
+                sessionStorage.setItem('adminPassword', adminPassword);
+            }
+        }
 
         async function loadLugarSelect() {
             try {
@@ -295,7 +304,10 @@
             const id = document.getElementById('edit-banda-id').value;
             if (!id || !confirm("¿Estás seguro de eliminar esta banda y todas sus fotos?")) return;
             try {
-                const res = await fetch(`${API_BASE}/bandas/${id}`, { method: 'DELETE' });
+                const res = await fetch(`${API_BASE}/bandas/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': sessionStorage.getItem('adminPassword') }
+                });
                 if (res.ok) {
                     alert("Banda eliminada");
                     location.reload();
@@ -306,7 +318,10 @@
         async function deleteItem(endpoint, id, callback) {
             if (!confirm("¿Eliminar este elemento?")) return;
             try {
-                const res = await fetch(`${API_BASE}/${endpoint}/${id}`, { method: 'DELETE' });
+                const res = await fetch(`${API_BASE}/${endpoint}/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': sessionStorage.getItem('adminPassword') }
+                });
                 if (res.ok) {
                     alert("Eliminado");
                     if (callback) callback();
@@ -375,7 +390,10 @@
             try {
                 const res = await fetch(`${API_BASE}/${endpoint}`, {
                     method: method,
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-admin-password': sessionStorage.getItem('adminPassword')
+                    },
                     body: JSON.stringify(data)
                 });
                 if (res.ok) {
@@ -442,7 +460,9 @@
 
             try {
                 const res = await fetch(`${API_BASE}/bandas/${bandaId}/fotos`, {
-                    method: 'POST', body: fd
+                    method: 'POST', 
+                    headers: { 'x-admin-password': sessionStorage.getItem('adminPassword') },
+                    body: fd
                 });
                 const data = await res.json();
                 if (res.ok) {
@@ -488,7 +508,9 @@
 
             try {
                 const res = await fetch(`${API_BASE}/lugares/${lugarId}/fotos`, {
-                    method: 'POST', body: fd
+                    method: 'POST', 
+                    headers: { 'x-admin-password': sessionStorage.getItem('adminPassword') },
+                    body: fd
                 });
                 const data = await res.json();
                 if (res.ok) {
