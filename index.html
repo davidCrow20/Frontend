@@ -1,5 +1,1126 @@
 <!DOCTYPE html>
 <html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin | Metal Costa Rica</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        .admin-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+        }
+
+        .admin-nav button {
+            background: #222;
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .admin-nav button.active {
+            background: var(--accent-red);
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="admin-container">
+        <h1>Panel de Administración</h1>
+        <a href="index.html"
+            style="color: var(--accent-purple); text-decoration: none; margin-bottom: 20px; display: inline-block;">←
+            Volver al sitio</a>
+
+        <div class="admin-nav">
+            <button onclick="showSection('bandas')" class="active" id="btn-bandas">Bandas</button>
+            <button onclick="showSection('historias')" id="btn-historias">Historias</button>
+            <button onclick="showSection('fotos')" id="btn-fotos">Lugares/Fotos</button>
+            <button onclick="showSection('noticias')" id="btn-noticias">Noticias/Artículos</button>
+        </div>
+
+        <!-- Formulario Bandas -->
+        <section id="section-bandas" class="form-section active">
+            <h2>Gestionar Bandas</h2>
+            <div class="form-group" style="background: #222; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <label style="color: #fff;">Seleccionar Acción</label>
+                <select id="edit-banda-select" class="form-control" style="background: #111;"
+                    onchange="handleBandaSelection()">
+                    <option value="">➕ Crear Nueva Banda</option>
+                    <!-- Opciones de bandas a editar se cargarán por JS -->
+                </select>
+            </div>
+            <form id="formBanda" style="border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 20px;">
+                <h3 id="banda-form-title">1. Crear Banda</h3>
+                <input type="hidden" id="edit-banda-id" value="">
+                <div class="form-group">
+                    <label>Nombre de la Banda</label>
+                    <input type="text" id="b-nombre" class="form-control" required placeholder="Ej: Adrenalina">
+                </div>
+                <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label>Género</label>
+                        <input type="text" id="b-genero" class="form-control" placeholder="Ej: Black Metal">
+                    </div>
+                    <div>
+                        <label>Provincia</label>
+                        <input type="text" id="b-provincia" class="form-control" placeholder="Ej: San José">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Foto Principal (URL)</label>
+                    <input type="url" id="b-foto" class="form-control" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Video URL (YouTube/Vimeo)</label>
+                    <input type="url" id="b-video" class="form-control"
+                        placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                <div class="form-group">
+                    <label>Biografía</label>
+                    <textarea id="b-bio" class="form-control" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Discografía (Texto libre)</label>
+                    <textarea id="b-disco" class="form-control" rows="2"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn-primary">Guardar Banda</button>
+                    <button type="button" id="btn-delete-banda" class="btn-primary" style="background: #661111; display: none;" onclick="deleteCurrentBanda()">Eliminar Banda</button>
+                </div>
+            </form>
+
+            <form id="formFotoBanda">
+                <h3>2. Agregar Fotos a la Banda</h3>
+                <div class="form-group">
+                    <label>Seleccionar Banda</label>
+                    <select id="fb-banda-id" class="form-control" required>
+                        <option value="">Cargando bandas...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Imágenes desde tu PC <span style="color:#777;font-size:0.85rem;">(puedes seleccionar varias)</span></label>
+                    <input type="file" id="fb-file" class="form-control" accept="image/*" multiple onchange="previewImagenes('fb-file','fb-preview')" required>
+                    <div id="fb-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+                </div>
+                <div class="form-group">
+                    <label>Descripción de la foto</label>
+                    <input type="text" id="fb-desc" class="form-control">
+                </div>
+                <button type="submit" class="btn-primary" style="background: var(--accent-purple);">Subir Foto a Banda</button>
+            </form>
+            <div id="manage-banda-photos" style="margin-top: 20px; display: none;">
+                <h3>Gestionar Fotos de la Galería</h3>
+                <div id="banda-photos-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;"></div>
+            </div>
+        </section>
+
+        <!-- Formulario Historias -->
+        <section id="section-historias" class="form-section">
+            <h2>Agregar Historia / Leyenda</h2>
+            <form id="formHistoria">
+                <div class="form-group">
+                    <label>Título</label>
+                    <input type="text" id="h-titulo" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Contenido</label>
+                    <textarea id="h-contenido" class="form-control" rows="6"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Foto (URL)</label>
+                    <input type="url" id="h-foto" class="form-control">
+                </div>
+                <button type="submit" class="btn-primary">Publicar Historia</button>
+            </form>
+            <div id="list-historias" style="margin-top: 30px;">
+                <h3>Gestionar Historias Existentes</h3>
+                <div id="historias-db-list"></div>
+            </div>
+        </section>
+
+        <!-- Formulario Fotos/Lugares -->
+        <section id="section-fotos" class="form-section">
+            <h2>Gestionar Lugares</h2>
+            <form id="formLugar" style="border-bottom: 1px solid #333; padding-bottom: 20px; margin-bottom: 20px;">
+                <h3>1. Crear Nuevo Lugar</h3>
+                <div class="form-group">
+                    <label>Nombre del Lugar</label>
+                    <input type="text" id="l-nombre" class="form-control" required placeholder="Ej: Sanatorio Durán">
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="l-desc" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Foto Portada (URL)</label>
+                    <input type="url" id="l-foto" class="form-control" placeholder="https://...">
+                </div>
+                <button type="submit" class="btn-primary">Crear Lugar</button>
+            </form>
+
+            <form id="formFoto">
+                <h3>2. Agregar Foto a Galería</h3>
+                <div class="form-group">
+                    <label>Seleccionar Lugar</label>
+                    <select id="f-lugar-id" class="form-control" required>
+                        <option value="">Cargando lugares...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Imágenes desde tu PC <span style="color:#777;font-size:0.85rem;">(puedes seleccionar varias)</span></label>
+                    <input type="file" id="f-file" class="form-control" accept="image/*" multiple onchange="previewImagenes('f-file','f-preview')" required>
+                    <div id="f-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+                </div>
+                <div class="form-group">
+                    <label>Breve descripción de la foto</label>
+                    <input type="text" id="f-desc" class="form-control">
+                </div>
+                <button type="submit" class="btn-primary" style="background: var(--accent-purple);">Subir Foto al Lugar</button>
+            </form>
+            <div id="manage-place-photos" style="margin-top: 20px; display: none;">
+                <h3>Gestionar Fotos de la Galería</h3>
+                <div id="place-photos-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px;"></div>
+            </div>
+            <div id="list-lugares" style="margin-top: 30px;">
+                <h3>Gestionar Lugares Existentes</h3>
+                <div id="lugares-db-list"></div>
+            </div>
+        </section>
+
+        <!-- Formulario Noticias -->
+        <section id="section-noticias" class="form-section">
+            <h2>Agregar Noticia o Artículo</h2>
+            <form id="formNoticia">
+                <div class="form-group">
+                    <label>Título</label>
+                    <input type="text" id="n-titulo" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Enlace</label>
+                    <input type="url" id="n-enlace" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="n-tipo" class="form-control">
+                        <option value="noticia">Noticia</option>
+                        <option value="articulo">Artículo</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Agregar</button>
+            </form>
+            <div id="list-noticias" style="margin-top: 30px;">
+                <h3>Gestionar contenido</h3>
+                <div id="noticias-db-list"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+            ? "http://localhost:3000" 
+            : "https://metal-cr-frontend-2.onrender.com"; 
+
+        // ------------------ AUTENTICACIÓN ------------------
+        let adminPassword = sessionStorage.getItem('adminPassword');
+        if (!adminPassword) {
+            adminPassword = prompt("Para hacer cambios, ingresa la Contraseña Maestra (si no la tienes, cancela):");
+            if (adminPassword) {
+                sessionStorage.setItem('adminPassword', adminPassword);
+            }
+        }
+
+        async function loadLugarSelect() {
+            try {
+                const res = await fetch(`${API_BASE}/lugares`);
+                const data = await res.json();
+                const select = document.getElementById('f-lugar-id');
+                select.innerHTML = '<option value="">-- Elige un lugar --</option>' +
+                    data.map(l => `<option value="${l.id}">${l.nombre}</option>`).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadBandaSelect() {
+            try {
+                const res = await fetch(`${API_BASE}/bandas`);
+                const data = await res.json();
+
+                const selectFotos = document.getElementById('fb-banda-id');
+                selectFotos.innerHTML = '<option value="">-- Elige una banda --</option>' +
+                    data.map(b => `<option value="${b.id}">${b.nombre}</option>`).join('');
+
+                const selectEdit = document.getElementById('edit-banda-select');
+                selectEdit.innerHTML = '<option value="">➕ Crear Nueva Banda</option>' +
+                    data.map(b => `<option value="${b.id}">✏️ Editar: ${b.nombre}</option>`).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function handleBandaSelection() {
+            const id = document.getElementById('edit-banda-select').value;
+            const formTitle = document.getElementById('banda-form-title');
+            const hiddenId = document.getElementById('edit-banda-id');
+            const form = document.getElementById('formBanda');
+
+            if (!id) {
+                formTitle.innerText = "1. Crear Banda";
+                hiddenId.value = "";
+                form.reset();
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/bandas/${id}`);
+                const data = await res.json();
+                formTitle.innerText = `1. Editando Banda: ${data.nombre}`;
+                hiddenId.value = data.id;
+
+                document.getElementById('b-nombre').value = data.nombre || '';
+                document.getElementById('b-genero').value = data.genero || '';
+                document.getElementById('b-provincia').value = data.provincia || '';
+                document.getElementById('b-foto').value = data.foto_principal || '';
+                document.getElementById('b-video').value = data.video_url || '';
+                document.getElementById('b-bio').value = data.biografia || '';
+                document.getElementById('b-disco').value = data.discografia || '';
+            } catch (e) {
+                console.error("Error al cargar datos de la banda", e);
+            }
+        }
+
+        async function deleteCurrentBanda() {
+            const id = document.getElementById('edit-banda-id').value;
+            if (!id || !confirm("¿Estás seguro de eliminar esta banda y todas sus fotos?")) return;
+            try {
+                const res = await fetch(`${API_BASE}/bandas/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': sessionStorage.getItem('adminPassword') }
+                });
+                if (res.ok) {
+                    alert("Banda eliminada");
+                    location.reload();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteItem(endpoint, id, callback) {
+            if (!confirm("¿Eliminar este elemento?")) return;
+            try {
+                const res = await fetch(`${API_BASE}/${endpoint}/${id}`, { 
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': sessionStorage.getItem('adminPassword') }
+                });
+                if (res.ok) {
+                    alert("Eliminado");
+                    if (callback) callback();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadStoriesList() {
+            const res = await fetch(`${API_BASE}/historias`);
+            const data = await res.json();
+            const list = document.getElementById('historias-db-list');
+            list.innerHTML = data.map(i => `
+                <div style="background:#111; padding:10px; border-radius:5px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>${i.titulo}</span>
+                    <button onclick="deleteItem('historias', ${i.id}, loadStoriesList)" style="background:#611; color:#fff; border:none; padding:5px 10px; cursor:pointer;">Eliminar</button>
+                </div>
+            `).join('');
+        }
+
+        async function loadPlacesList() {
+            const res = await fetch(`${API_BASE}/lugares`);
+            const data = await res.json();
+            const list = document.getElementById('lugares-db-list');
+            list.innerHTML = data.map(i => `
+                <div style="background:#111; padding:10px; border-radius:5px; margin-bottom:5px; border-left: 4px solid var(--accent-red);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong>${i.nombre}</strong>
+                        <button onclick="deleteItem('lugares', ${i.id}, loadPlacesList)" style="background:#611; color:#fff; border:none; padding:5px 10px; cursor:pointer;">Eliminar Lugar</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadNoticiasList() {
+            const res = await fetch(`${API_BASE}/noticias`);
+            const data = await res.json();
+            const list = document.getElementById('noticias-db-list');
+            list.innerHTML = data.map(i => `
+                <div style="background:#111; padding:10px; border-radius:5px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>[${i.tipo}] ${i.titulo}</span>
+                    <button onclick="deleteItem('noticias', ${i.id}, loadNoticiasList)" style="background:#611; color:#fff; border:none; padding:5px 10px; cursor:pointer;">Eliminar</button>
+                </div>
+            `).join('');
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.admin-nav button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`section-${id}`).classList.add('active');
+            document.getElementById(`btn-${id}`).classList.add('active');
+            if (id === 'fotos') loadPlacesList();
+            if (id === 'bandas') loadBandaSelect();
+            if (id === 'historias') loadStoriesList();
+            if (id === 'noticias') loadNoticiasList();
+        }
+
+        // Modificar handleBandaSelection para mostrar botón eliminar
+        const originalHandleBandaSelection = handleBandaSelection;
+        handleBandaSelection = async function() {
+            await originalHandleBandaSelection();
+            const id = document.getElementById('edit-banda-select').value;
+            document.getElementById('btn-delete-banda').style.display = id ? 'block' : 'none';
+        }
+
+        async function sendData(endpoint, data, form, method = 'POST') {
+            try {
+                const res = await fetch(`${API_BASE}/${endpoint}`, {
+                    method: method,
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-admin-password': sessionStorage.getItem('adminPassword')
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert("Guardado correctamente!");
+                    form.reset();
+                    if (endpoint.includes('lugares')) loadLugarSelect();
+                    if (endpoint.includes('bandas')) {
+                        loadBandaSelect();
+                        document.getElementById('edit-banda-id').value = "";
+                        document.getElementById('banda-form-title').innerText = "1. Crear Banda";
+                        document.getElementById('edit-banda-select').value = "";
+                    }
+                } else {
+                    const err = await res.json();
+                    alert("Error: " + err.error);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error de conexión");
+            }
+        }
+
+        document.getElementById('formBanda').onsubmit = (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-banda-id').value;
+            const endpoint = id ? `bandas/${id}` : 'bandas';
+            const method = id ? 'PUT' : 'POST';
+
+            sendData(endpoint, {
+                nombre: document.getElementById('b-nombre').value,
+                genero: document.getElementById('b-genero').value,
+                provincia: document.getElementById('b-provincia').value,
+                foto_principal: document.getElementById('b-foto').value,
+                video_url: document.getElementById('b-video').value,
+                biografia: document.getElementById('b-bio').value,
+                discografia: document.getElementById('b-disco').value
+            }, e.target, method);
+        };
+
+        // Vista previa de múltiples imágenes
+        function previewImagenes(inputId, previewId) {
+            const files = document.getElementById(inputId).files;
+            const container = document.getElementById(previewId);
+            container.innerHTML = '';
+            Array.from(files).forEach(file => {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.style.cssText = 'width:100px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #333;';
+                container.appendChild(img);
+            });
+        }
+
+        // Subida de múltiples fotos de banda
+        document.getElementById('formFotoBanda').onsubmit = async (e) => {
+            e.preventDefault();
+            const bandaId = document.getElementById('fb-banda-id').value;
+            if (!bandaId) return alert('Selecciona una banda primero.');
+            const fileInput = document.getElementById('fb-file');
+            if (!fileInput.files.length) return alert('Selecciona al menos una imagen.');
+
+            const fd = new FormData();
+            Array.from(fileInput.files).forEach(f => fd.append('imagenes', f));
+            fd.append('descripcion', document.getElementById('fb-desc').value);
+
+            try {
+                const res = await fetch(`${API_BASE}/bandas/${bandaId}/fotos`, {
+                    method: 'POST', 
+                    headers: { 'x-admin-password': sessionStorage.getItem('adminPassword') },
+                    body: fd
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`¡${data.fotos.length} foto(s) subida(s) correctamente!`);
+                    e.target.reset();
+                    document.getElementById('fb-preview').innerHTML = '';
+                    loadBandPhotos(); // Refrescar lista de fotos
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) { alert('Error de conexión'); }
+        };
+
+        document.getElementById('formHistoria').onsubmit = (e) => {
+            e.preventDefault();
+            sendData('historias', {
+                titulo: document.getElementById('h-titulo').value,
+                contenido: document.getElementById('h-contenido').value,
+                foto: document.getElementById('h-foto').value
+            }, e.target);
+        };
+
+        document.getElementById('formLugar').onsubmit = (e) => {
+            e.preventDefault();
+            sendData('lugares', {
+                nombre: document.getElementById('l-nombre').value,
+                descripcion: document.getElementById('l-desc').value,
+                foto_portada: document.getElementById('l-foto').value
+            }, e.target);
+        };
+
+        // Subida de múltiples fotos de lugar
+        document.getElementById('formFoto').onsubmit = async (e) => {
+            e.preventDefault();
+            const lugarId = document.getElementById('f-lugar-id').value;
+            if (!lugarId) return alert('Selecciona un lugar primero.');
+            const fileInput = document.getElementById('f-file');
+            if (!fileInput.files.length) return alert('Selecciona al menos una imagen.');
+
+            const fd = new FormData();
+            Array.from(fileInput.files).forEach(f => fd.append('imagenes', f));
+            fd.append('descripcion', document.getElementById('f-desc').value);
+
+            try {
+                const res = await fetch(`${API_BASE}/lugares/${lugarId}/fotos`, {
+                    method: 'POST', 
+                    headers: { 'x-admin-password': sessionStorage.getItem('adminPassword') },
+                    body: fd
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`¡${data.fotos.length} foto(s) subida(s) correctamente!`);
+                    e.target.reset();
+                    document.getElementById('f-preview').innerHTML = '';
+                    loadPlacePhotos(); // Refrescar lista de fotos
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) { alert('Error de conexión'); }
+        };
+
+        // --- GESTIÓN DE FOTOS INDIVIDUALES ---
+        async function loadBandPhotos() {
+            const bandaId = document.getElementById('fb-banda-id').value;
+            const container = document.getElementById('manage-banda-photos');
+            const list = document.getElementById('banda-photos-list');
+            if (!bandaId) {
+                container.style.display = 'none';
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/bandas/${bandaId}`);
+                const data = await res.json();
+                container.style.display = 'block';
+                list.innerHTML = data.fotos.map(f => `
+                    <div style="position:relative; background:#111; border-radius:5px; padding:5px; text-align:center; border: 1px solid #333;">
+                        <img src="${imgUrl(f.url)}" style="width:100%; height:80px; object-fit:cover; border-radius:3px;">
+                        <button onclick="deleteItem('fotos_bandas', ${f.id}, loadBandPhotos)" style="position:absolute; top:2px; right:2px; background:#f00; color:#fff; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-weight:bold;">X</button>
+                    </div>
+                `).join('') || '<p style="grid-column: 1/-1;">Sin fotos aún.</p>';
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadPlacePhotos() {
+            const lugarId = document.getElementById('f-lugar-id').value;
+            const container = document.getElementById('manage-place-photos');
+            const list = document.getElementById('place-photos-list');
+            if (!lugarId) {
+                container.style.display = 'none';
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/lugares/${lugarId}`);
+                const data = await res.json();
+                container.style.display = 'block';
+                list.innerHTML = data.fotos.map(f => `
+                    <div style="position:relative; background:#111; border-radius:5px; padding:5px; text-align:center; border: 1px solid #333;">
+                        <img src="${imgUrl(f.url)}" style="width:100%; height:80px; object-fit:cover; border-radius:3px;">
+                        <button onclick="deleteItem('fotos_lugares', ${f.id}, loadPlacePhotos)" style="position:absolute; top:2px; right:2px; background:#f00; color:#fff; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; font-weight:bold;">X</button>
+                    </div>
+                `).join('') || '<p style="grid-column: 1/-1;">Sin fotos aún.</p>';
+            } catch (e) { console.error(e); }
+        }
+
+        document.getElementById('fb-banda-id').addEventListener('change', loadBandPhotos);
+        document.getElementById('f-lugar-id').addEventListener('change', loadPlacePhotos);
+
+        function imgUrl(url) {
+            if (!url) return '';
+            if (url.startsWith('/uploads/') || url.startsWith('/imagenes/')) return API_BASE + url;
+            return url;
+        }
+
+        document.getElementById('formNoticia').onsubmit = (e) => {
+            e.preventDefault();
+            sendData('noticias', {
+                titulo: document.getElementById('n-titulo').value,
+                enlace: document.getElementById('n-enlace').value,
+                tipo: document.getElementById('n-tipo').value
+            }, e.target);
+        };
+    </script>
+
+</body>
+
+</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bandas | Metal Costa Rica</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<div class="parent">
+    <header class="div1 header">
+        <h1 style="cursor:pointer;" onclick="location.href='index.html'">Metal Costa Rica</h1>
+        <p class="subtitle">Directorio de Bandas</p>
+    </header>
+
+    <nav class="div4 nav">
+        <a href="index.html">Inicio</a>
+        <a href="bandas.html" class="nav-link active">Bandas</a>
+        <a href="historias.html">Historias</a>
+        <a href="fotos.html">Fotos</a>
+        <a href="admin.html">Admin</a>
+    </nav>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Buscar bandas..." onkeyup="handleSearch(event)">
+    </div>
+
+    <aside class="sidebar-section sidebar-left">
+        <h2>Noticias</h2>
+        <div id="newsContainer"><p>Cargando...</p></div>
+    </aside>
+
+    <main class="content" id="mainContent">
+        <p>Cargando bandas...</p>
+    </main>
+
+    <aside class="sidebar-section sidebar-right">
+        <h2>Artículos</h2>
+        <div id="articlesContainer"><p>Cargando...</p></div>
+    </aside>
+
+    <footer class="div9 footer">
+        <p>© 2024 Metal Costa Rica</p>
+    </footer>
+</div>
+
+<script>
+    const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+        ? "http://localhost:3000" 
+        : "https://metal-cr-frontend-2.onrender.com"; // Reemplaza con tu URL de Render
+
+    async function loadContent() {
+        fetchBands();
+        fetchNews();
+    }
+
+    function imgUrl(url) {
+        if (!url) return '';
+        if (url.startsWith('/uploads/') || url.startsWith('/imagenes/')) return API_BASE + url;
+        return url;
+    }
+
+    async function fetchBands() {
+        try {
+            const res = await fetch(`${API_BASE}/bandas`);
+            const data = await res.json();
+            renderCards(data, 'band');
+        } catch (e) { console.error(e); }
+    }
+
+    async function fetchNews() {
+        try {
+            const res = await fetch(`${API_BASE}/noticias`);
+            const data = await res.json();
+            renderSidebar('newsContainer', data.filter(i => i.tipo === 'noticia'));
+            renderSidebar('articlesContainer', data.filter(i => i.tipo === 'articulo'));
+        } catch (e) { console.error(e); }
+    }
+
+    function renderCards(items, type) {
+        const container = document.getElementById('mainContent');
+        container.innerHTML = items.map(item => `
+            <div class="card" onclick="location.href='detalle.html?type=${type}&id=${item.id}'">
+                <img src="${imgUrl(item.foto_principal || item.foto) || 'https://placehold.co/400x250/111/da0b0b?text=Dark+Archive'}" class="card-img">
+                <div class="card-body">
+                    <h3 class="card-title">${item.nombre || item.titulo}</h3>
+                    <p class="card-text">${item.genero || item.provincia || ''}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderSidebar(id, items) {
+        document.getElementById(id).innerHTML = items.map(i => `
+            <div class="news-item">
+                <h3 onclick="window.open('${i.enlace}', '_blank')">${i.titulo}</h3>
+                <p>${i.descripcion || ''}</p>
+            </div>
+        `).join('') || '<p>No hay contenido.</p>';
+    }
+
+    async function handleSearch(event) {
+        const q = event.target.value;
+        if (q.length < 2) { if(q.length===0) fetchBands(); return; }
+        const res = await fetch(`${API_BASE}/buscar?q=${q}`);
+        const data = await res.json();
+        renderCards(data.bands, 'band');
+    }
+
+    window.onload = loadContent;
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle | Metal Costa Rica</title>
+    <link rel="stylesheet" href="estilos.css">
+    <style>
+        .detail-page { max-width: 1000px; margin: 40px auto; padding: 20px; }
+        .detail-header { display: grid; grid-template-columns: 400px 1fr; gap: 40px; margin-bottom: 40px; }
+        .detail-img { width: 100%; border-radius: 12px; border: 2px solid #222; }
+        .detail-info h1 { font-size: 3.5rem; margin: 0 0 10px 0; }
+        .detail-meta { color: var(--accent-purple); font-size: 1.2rem; margin-bottom: 20px; }
+        .section-title { border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 40px; color: var(--accent-red); }
+        .videos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .video-item { background: #111; padding: 10px; border-radius: 8px; text-align: center; color: #777; }
+        .social-links { margin-top: 20px; display: flex; gap: 15px; }
+        .social-link { color: #ccc; text-decoration: none; border: 1px solid #333; padding: 8px 15px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="parent" style="display: block;">
+    <div class="detail-page" id="detailContainer">
+        <p>Cargando detalles...</p>
+    </div>
+</div>
+
+<script>
+    const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+        ? "http://localhost:3000" 
+        : "https://metal-cr-frontend-2.onrender.com"; 
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+    const id = urlParams.get('id');
+
+    async function loadDetail() {
+        if (!id) return;
+        try {
+            let endpoint = "";
+            if (type === 'band') endpoint = `bandas/${id}`;
+            else if (type === 'story') endpoint = `historias/${id}`;
+            else if (type === 'place') endpoint = `lugares/${id}`;
+
+            const res = await fetch(`${API_BASE}/${endpoint}`);
+            const data = await res.json();
+            
+            if (data.error) {
+                document.getElementById('detailContainer').innerHTML = `<h1>Error: ${data.error}</h1>`;
+                return;
+            }
+
+            renderDetail(data);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // Prefija rutas de servidor con la URL base para que funcionen desde el filesystem
+    function imgUrl(url) {
+        if (!url) return '';
+        if (url.startsWith('/uploads/') || url.startsWith('/imagenes/')) {
+            return API_BASE + url;
+        }
+        return url;
+    }
+
+    function getYoutubeEmbed(url) {
+        if (!url) return '';
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        if (match && match[2].length === 11) {
+            const videoId = match[2];
+            // Usamos youtube-nocookie para mayor compatibilidad de embeds
+            return `
+                <div style="position:relative;">
+                    <iframe 
+                        id="yt-iframe"
+                        width="100%" height="315" 
+                        src="https://www.youtube-nocookie.com/embed/${videoId}?rel=0" 
+                        frameborder="0" allowfullscreen
+                        onerror="this.style.display='none'; document.getElementById('yt-fallback').style.display='block'">
+                    </iframe>
+                    <div id="yt-fallback" style="display:none; text-align:center; padding:30px; background:#111; border-radius:12px; border:1px solid #333;">
+                        <p style="color:#999; margin-bottom:15px;">⚠️ Este video no permite reproducción embebida.</p>
+                        <a href="${url}" target="_blank" 
+                           style="background:var(--accent-red);color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">
+                           ▶ Ver en YouTube
+                        </a>
+                    </div>
+                </div>
+                <script>
+                    // Detectar Error 153 (embedding deshabilitado) via postMessage
+                    window.addEventListener('message', function(e) {
+                        if (e.data && e.data.event === 'infoDelivery' && e.data.info && e.data.info.error) {
+                            document.getElementById('yt-iframe').style.display = 'none';
+                            document.getElementById('yt-fallback').style.display = 'block';
+                        }
+                    });
+                    // Fallback extra: si el iframe no carga en 4 segundos, mostrar botón
+                    setTimeout(function() {
+                        var iframe = document.getElementById('yt-iframe');
+                        if (iframe) {
+                            try {
+                                var doc = iframe.contentDocument || iframe.contentWindow.document;
+                                if (!doc || doc.readyState === 'loading') {}
+                            } catch(e) { /* cross-origin es normal */ }
+                        }
+                    }, 4000);
+                <\/script>`;
+        }
+        // No es YouTube — mostrar botón directo
+        return `<div style="text-align:center; padding:30px; background:#111; border-radius:12px; border:1px solid #333;">
+                    <a href="${url}" target="_blank" 
+                       style="background:var(--accent-red);color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">
+                       ▶ Ver Video
+                    </a>
+                </div>`;
+    }
+
+    function renderDetail(item) {
+        const container = document.getElementById('detailContainer');
+        const backBtn = '<a href="index.html" style="color: var(--accent-purple); text-decoration: none; display: block; margin-bottom: 20px;">← Volver</a>';
+        
+        if (type === 'band') {
+            container.innerHTML = `
+                ${backBtn}
+                <div class="detail-header">
+                    <img src="${imgUrl(item.foto_principal) || 'https://placehold.co/400x400/111/da0b0b?text=Sin+Foto'}" class="detail-img">
+                    <div class="detail-info">
+                        <h1>${item.nombre}</h1>
+                        <div class="detail-meta">${item.genero || ''} | ${item.provincia || ''}</div>
+                        <p>${item.biografia || ''}</p>
+                    </div>
+                </div>
+
+                <h2 class="section-title">Video</h2>
+                <div class="video-container" style="margin-top: 20px;">
+                    ${item.video_url ? getYoutubeEmbed(item.video_url) : '<p>No hay video disponible.</p>'}
+                </div>
+
+                <h2 class="section-title">Fotos de la Banda</h2>
+                <div class="content" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); margin-top: 20px;">
+                    ${item.fotos && item.fotos.length > 0 ? item.fotos.map(f => `
+                        <div class="photo-card" style="border: 1px solid #222; border-radius: 8px; overflow: hidden;">
+                            <img src="${imgUrl(f.url)}" style="width: 100%; display: block; cursor: pointer;" onclick="window.open('${imgUrl(f.url)}', '_blank')">
+                            <p style="font-size: 0.8rem; padding: 10px; margin: 0; color: #777;">${f.descripcion || ''}</p>
+                        </div>
+                    `).join('') : '<p>No hay fotos en la galería.</p>'}
+                </div>
+
+                <h2 class="section-title">Discografía</h2>
+                <p style="margin-top: 15px;">${item.discografia || 'No disponible'}</p>
+            `;
+        } else if (type === 'story') {
+            container.innerHTML = `
+                ${backBtn}
+                <h1>${item.titulo}</h1>
+                <p class="detail-meta">Archivado - ${new Date(item.fecha).toLocaleDateString()}</p>
+                <img src="${imgUrl(item.foto)}" style="max-width: 100%; border-radius: 12px; margin: 20px 0; border: 1px solid #333;">
+                <div style="font-size: 1.1rem; line-height: 1.8; color: #ccc;">
+                    ${item.contenido ? item.contenido.replace(/\n/g, '<br>') : ''}
+                </div>
+            `;
+        } else if (type === 'place') {
+            container.innerHTML = `
+                ${backBtn}
+                <h1>${item.nombre}</h1>
+                <p style="font-size: 1.2rem; color: #999; margin-bottom: 30px;">${item.descripcion || ''}</p>
+                <h2 class="section-title">Galería de Fotos</h2>
+                <div class="content" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+                    ${item.fotos && item.fotos.length > 0 ? item.fotos.map(f => `
+                        <div class="photo-card" style="border: 1px solid #222; border-radius: 8px; overflow: hidden;">
+                            <img src="${imgUrl(f.url)}" style="width: 100%; display: block; cursor: pointer;" onclick="window.open('${imgUrl(f.url)}', '_blank')">
+                            <p style="font-size: 0.8rem; padding: 10px; margin: 0; color: #777;">${f.descripcion || ''}</p>
+                        </div>
+                    `).join('') : '<p>No hay fotos en esta galería aún.</p>'}
+                </div>
+            `;
+        }
+    }
+
+    window.onload = loadDetail;
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galerías | Metal Costa Rica</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<div class="parent">
+    <header class="div1 header">
+        <h1 style="cursor:pointer;" onclick="location.href='index.html'">Metal Costa Rica</h1>
+        <p class="subtitle">Galerías & Lugares Sombríos</p>
+    </header>
+
+    <nav class="div4 nav">
+        <a href="index.html">Inicio</a>
+        <a href="bandas.html">Bandas</a>
+        <a href="historias.html">Historias</a>
+        <a href="fotos.html" class="nav-link active">Fotos</a>
+        <a href="admin.html">Admin</a>
+    </nav>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Buscar lugares..." onkeyup="handleSearch(event)">
+    </div>
+
+    <aside class="sidebar-section sidebar-left">
+        <h2>Noticias</h2>
+        <div id="newsContainer"><p>Cargando...</p></div>
+    </aside>
+
+    <main class="content" id="mainContent">
+        <p>Cargando galerías...</p>
+    </main>
+
+    <aside class="sidebar-section sidebar-right">
+        <h2>Artículos</h2>
+        <div id="articlesContainer"><p>Cargando...</p></div>
+    </aside>
+
+    <footer class="div9 footer">
+        <p>© 2024 Metal Costa Rica</p>
+    </footer>
+</div>
+
+<script>
+    const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+        ? "http://localhost:3000" 
+        : "https://metal-cr-frontend-2.onrender.com"; 
+
+    async function loadContent() {
+        fetchPlaces();
+        fetchNews();
+    }
+
+    function imgUrl(url) {
+        if (!url) return '';
+        if (url.startsWith('/uploads/') || url.startsWith('/imagenes/')) return API_BASE + url;
+        return url;
+    }
+
+    async function fetchPlaces() {
+        try {
+            const res = await fetch(`${API_BASE}/lugares`);
+            const data = await res.json();
+            renderCards(data.map(i => ({...i, foto_principal: i.foto_portada})), 'place');
+        } catch (e) { console.error(e); }
+    }
+
+    async function fetchNews() {
+        try {
+            const res = await fetch(`${API_BASE}/noticias`);
+            const data = await res.json();
+            renderSidebar('newsContainer', data.filter(i => i.tipo === 'noticia'));
+            renderSidebar('articlesContainer', data.filter(i => i.tipo === 'articulo'));
+        } catch (e) { console.error(e); }
+    }
+
+    function renderCards(items, type) {
+        const container = document.getElementById('mainContent');
+        container.innerHTML = items.map(item => `
+            <div class="card" onclick="location.href='detalle.html?type=${type}&id=${item.id}'">
+                <img src="${imgUrl(item.foto_principal) || 'https://placehold.co/400x250/111/da0b0b?text=Gallery'}" class="card-img">
+                <div class="card-body">
+                    <h3 class="card-title">${item.nombre}</h3>
+                    <p class="card-text">${item.descripcion ? item.descripcion.substring(0, 80) + '...' : ''}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderSidebar(id, items) {
+        document.getElementById(id).innerHTML = items.map(i => `
+            <div class="news-item">
+                <h3 onclick="window.open('${i.enlace}', '_blank')">${i.titulo}</h3>
+                <p>${i.descripcion || ''}</p>
+            </div>
+        `).join('') || '<p>No hay contenido.</p>';
+    }
+
+    async function handleSearch(event) {
+        const q = event.target.value;
+        if (q.length < 2) { if(q.length===0) fetchPlaces(); return; }
+        const res = await fetch(`${API_BASE}/lugares`); 
+        const data = await res.json();
+        const filtered = data.filter(l => l.nombre.toLowerCase().includes(q.toLowerCase()));
+        renderCards(filtered.map(i => ({...i, foto_principal: i.foto_portada})), 'place');
+    }
+
+    window.onload = loadContent;
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historias | Metal Costa Rica</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<div class="parent">
+    <header class="div1 header">
+        <h1 style="cursor:pointer;" onclick="location.href='index.html'">Metal Costa Rica</h1>
+        <p class="subtitle">Historias & Leyendas de Terror</p>
+    </header>
+
+    <nav class="div4 nav">
+        <a href="index.html">Inicio</a>
+        <a href="bandas.html">Bandas</a>
+        <a href="historias.html" class="nav-link active">Historias</a>
+        <a href="fotos.html">Fotos</a>
+        <a href="admin.html">Admin</a>
+    </nav>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-bar" placeholder="Buscar historias..." onkeyup="handleSearch(event)">
+    </div>
+
+    <aside class="sidebar-section sidebar-left">
+        <h2>Noticias</h2>
+        <div id="newsContainer"><p>Cargando...</p></div>
+    </aside>
+
+    <main class="content" id="mainContent">
+        <p>Cargando historias...</p>
+    </main>
+
+    <aside class="sidebar-section sidebar-right">
+        <h2>Artículos</h2>
+        <div id="articlesContainer"><p>Cargando...</p></div>
+    </aside>
+
+    <footer class="div9 footer">
+        <p>© 2024 Metal Costa Rica</p>
+    </footer>
+</div>
+
+<script>
+    const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+        ? "http://localhost:3000" 
+        : "https://metal-cr-frontend-2.onrender.com"; 
+
+    async function loadContent() {
+        fetchStories();
+        fetchNews();
+    }
+
+    function imgUrl(url) {
+        if (!url) return '';
+        if (url.startsWith('/uploads/') || url.startsWith('/imagenes/')) return API_BASE + url;
+        return url;
+    }
+
+    async function fetchStories() {
+        try {
+            const res = await fetch(`${API_BASE}/historias`);
+            const data = await res.json();
+            renderCards(data, 'story');
+        } catch (e) { console.error(e); }
+    }
+
+    async function fetchNews() {
+        try {
+            const res = await fetch(`${API_BASE}/noticias`);
+            const data = await res.json();
+            renderSidebar('newsContainer', data.filter(i => i.tipo === 'noticia'));
+            renderSidebar('articlesContainer', data.filter(i => i.tipo === 'articulo'));
+        } catch (e) { console.error(e); }
+    }
+
+    function renderCards(items, type) {
+        const container = document.getElementById('mainContent');
+        container.innerHTML = items.map(item => `
+            <div class="card" onclick="location.href='detalle.html?type=${type}&id=${item.id}'">
+                <img src="${imgUrl(item.foto) || 'https://placehold.co/400x250/111/da0b0b?text=Haunted+History'}" class="card-img">
+                <div class="card-body">
+                    <h3 class="card-title">${item.titulo}</h3>
+                    <p class="card-text">${new Date(item.fecha).toLocaleDateString()}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderSidebar(id, items) {
+        document.getElementById(id).innerHTML = items.map(i => `
+            <div class="news-item">
+                <h3 onclick="window.open('${i.enlace}', '_blank')">${i.titulo}</h3>
+                <p>${i.descripcion || ''}</p>
+            </div>
+        `).join('') || '<p>No hay contenido.</p>';
+    }
+
+    async function handleSearch(event) {
+        const q = event.target.value;
+        if (q.length < 2) { if(q.length===0) fetchStories(); return; }
+        const res = await fetch(`${API_BASE}/buscar?q=${q}`);
+        const data = await res.json();
+        renderCards(data.stories || [], 'story');
+    }
+
+    window.onload = loadContent;
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -157,5 +1278,473 @@
             <a href="admin.html">Admin</a>
         </div>
     </div>
+</body>
+</html>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Portada — Glitch Geometría</title>
+<style>
+  html,body{height:100%;margin:0;background:#050506;display:flex;align-items:center;justify-content:center;}
+  .wrap{width:100%;max-width:1600px;padding:12px;box-sizing:border-box;}
+  canvas{display:block;width:100%;height:auto;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,0.7);}
+  .controls{margin-top:10px;display:flex;gap:8px;align-items:center;}
+  button{background:#0b6bd6;color:white;border:none;padding:10px 14px;border-radius:6px;font-weight:600;cursor:pointer}
+  button:active{transform:translateY(1px)}
+  p.hint{color:#9aa3b2;margin:0;font-size:13px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas id="cover" width="1600" height="620"></canvas>
+    <div class="controls">
+      <button id="download">Download PNG</button>
+      <p class="hint">Resolución 1600×620 — ideal para portada (subir y recortar si es necesario)</p>
+    </div>
+  </div>
+
+<script>
+// Configs
+const W = 1600, H = 620;
+const canvas = document.getElementById('cover');
+canvas.width = W; canvas.height = H;
+const ctx = canvas.getContext('2d', { alpha: false });
+
+// Utilities
+function rand(a=0,b=1){ return a + Math.random()*(b-a); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+// Background noise + base tint
+function paintBackground() {
+  // base dark blue-black gradient
+  const g = ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0, '#021015');
+  g.addColorStop(0.6, '#00121a');
+  g.addColorStop(1, '#000006');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+
+  // subtle static layer
+  const img = ctx.createImageData(W,H);
+  for(let i=0;i<img.data.length;i+=4){
+    const v = Math.floor(6 + Math.random()*22); // low-intensity noise
+    img.data[i] = v+2;     // r
+    img.data[i+1] = v+10;  // g
+    img.data[i+2] = v+16;  // b
+    img.data[i+3] = 255;
+  }
+  // draw with low alpha to keep the dark vibe
+  const tmp = document.createElement('canvas');
+  tmp.width=W; tmp.height=H;
+  tmp.getContext('2d').putImageData(img,0,0);
+  ctx.globalAlpha = 0.045;
+  ctx.drawImage(tmp,0,0);
+  ctx.globalAlpha = 1;
+}
+
+// Draw circuit-like fractal lines (grid + recursive branching)
+function drawCircuitLines() {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineWidth = 1.3;
+  ctx.strokeStyle = '#0fe0ff'; // cyan-blue
+  ctx.globalAlpha = 0.16;
+
+  const rows = 10, cols = Math.floor(rows * (W/H));
+  const spacingX = W / cols, spacingY = H / rows;
+
+  // base grid of subtle circuit traces
+  for(let y=0;y<=rows;y++){
+    for(let x=0;x<=cols;x++){
+      const cx = Math.floor(x*spacingX + rand(-spacingX*0.15, spacingX*0.15));
+      const cy = Math.floor(y*spacingY + rand(-spacingY*0.15, spacingY*0.15));
+      drawBranch(cx, cy, Math.floor(rand(2,5)), Math.PI*rand(), 0.9);
+    }
+  }
+
+  function drawBranch(x,y,depth,angle,strength) {
+    if(depth<=0) return;
+    const len = 18 + 28*strength + rand(-8,12);
+    const nx = x + Math.cos(angle)*(len*(0.8+0.6*strength));
+    const ny = y + Math.sin(angle)*(len*(0.8+0.6*strength));
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    ctx.lineTo(nx,ny);
+    ctx.stroke();
+    // tiny node
+    if(Math.random() < 0.12) {
+      ctx.beginPath();
+      ctx.arc(nx,ny,0.9+Math.random()*1.6,0,Math.PI*2);
+      ctx.fillStyle = '#09c7ff';
+      ctx.fill();
+    }
+    // recursive forks
+    if(Math.random() < 0.9) drawBranch(nx,ny,depth-1, angle + rand(-0.8,0.8), strength*0.82);
+    if(Math.random() < 0.45) drawBranch(nx,ny,Math.max(0,depth-2), angle + rand(-1.6,1.6), strength*0.6);
+  }
+
+  ctx.restore();
+}
+
+// Draw central geometry (circle + pentagram + eye)
+function drawCentralSymbol(time=0) {
+  ctx.save();
+  const cx = W*0.5, cy = H*0.5;
+  const radius = Math.min(W,H)*0.27;
+
+  // halo glow
+  const g = ctx.createRadialGradient(cx,cy, radius*0.45, cx,cy, radius*1.6);
+  g.addColorStop(0, 'rgba(10,220,255,0.10)');
+  g.addColorStop(0.6, 'rgba(6,80,110,0.02)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(cx-radius*1.6, cy-radius*1.6, radius*3.2, radius*3.2);
+
+  // noisy circle (outer)
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = '#06d1ff';
+  ctx.globalAlpha = 0.98;
+  ctx.beginPath();
+  for(let a=0;a<Math.PI*2;a+=0.02) {
+    const r = radius + Math.sin(a*24 + time*0.006)*2.3 + rand(-0.8,0.8);
+    const x = cx + Math.cos(a)*r;
+    const y = cy + Math.sin(a)*r;
+    if(a===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+
+  // pentagram (hand-drawn rough)
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = '#9ff8ff';
+  ctx.beginPath();
+  const pts = [];
+  for(let i=0;i<5;i++){
+    const ang = -Math.PI/2 + i*(2*Math.PI/5);
+    pts.push({
+      x: cx + Math.cos(ang)*(radius*0.75 + Math.sin(i*3 + time*0.01)*3),
+      y: cy + Math.sin(ang)*(radius*0.75 + Math.cos(i*4 + time*0.01)*3)
+    });
+  }
+  // star path (connect 0->2->4->1->3->0)
+  const order = [0,2,4,1,3,0];
+  for(let i=0;i<order.length;i++){
+    const p = pts[order[i]];
+    if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+  }
+  ctx.stroke();
+
+  // inner glitch eye (stylized)
+  ctx.globalAlpha = 0.98;
+  const eyeW = radius*0.45, eyeH = radius*0.2;
+  // white circle pupil glow
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, eyeW*0.18, eyeW*0.18, 0, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.fill();
+
+  // iris ring
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, eyeW*0.55, eyeH*0.9, 0, 0, Math.PI*2);
+  ctx.strokeStyle = '#8ff2ff';
+  ctx.stroke();
+
+  // eye outline (glitchy shape)
+  ctx.lineWidth = 2.4;
+  ctx.strokeStyle = '#0cf0ff';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, eyeW, eyeH, 0, 0, Math.PI*2);
+  ctx.stroke();
+
+  // extra subtle circuit-lines inside center
+  ctx.globalAlpha = 0.16;
+  ctx.lineWidth = 1.0;
+  for(let i=0;i<8;i++){
+    const ang = rand(0,Math.PI*2);
+    ctx.beginPath();
+    const sx = cx + Math.cos(ang)*rand(eyeW*0.2, eyeW*0.6);
+    const sy = cy + Math.sin(ang)*rand(eyeH*0.2, eyeH*0.6);
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(sx + rand(-8,8), sy + rand(-6,6));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// Strong horizontal glitch strips + RGB split effect
+function applyGlitchEffect(offCanvas, t) {
+  const gctx = offCanvas.getContext('2d');
+  const img = gctx.getImageData(0,0,offCanvas.width,offCanvas.height);
+  const data = img.data;
+  const Hseg = Math.floor(6 + Math.abs(Math.sin(t*0.002))*18);
+  // horizontal displacement bands
+  for(let band=0; band < Hseg; band++){
+    const y0 = Math.floor(band * offCanvas.height / Hseg);
+    const h = Math.floor(rand(2, 18));
+    const shift = Math.floor(Math.sin((t*0.01 + band)*0.6)*20 + rand(-28,28));
+    if(Math.random() < 0.55){
+      // shift line pixels horizontally
+      for(let y=y0; y < Math.min(offCanvas.height, y0+h); y++){
+        const row = y * offCanvas.width * 4;
+        const tmp = new Uint8ClampedArray(offCanvas.width*4);
+        for(let x=0;x<offCanvas.width;x++){
+          const idx = row + x*4;
+          let nx = clamp(x + shift, 0, offCanvas.width-1);
+          const nidx = row + nx*4;
+          tmp[x*4] = data[nidx];
+          tmp[x*4+1] = data[nidx+1];
+          tmp[x*4+2] = data[nidx+2];
+          tmp[x*4+3] = data[nidx+3];
+        }
+        // write back
+        for(let x=0;x<offCanvas.width;x++){
+          const idx = row + x*4;
+          data[idx] = tmp[x*4];
+          data[idx+1] = tmp[x*4+1];
+          data[idx+2] = tmp[x*4+2];
+        }
+      }
+    }
+  }
+
+  // RGB chromatic split around edges (subtle)
+  const split = Math.floor(1 + Math.sin(t*0.003)*3);
+  for(let y=0;y<offCanvas.height;y++){
+    for(let x=0;x<offCanvas.width;x++){
+      const i = (y*offCanvas.width + x)*4;
+      // push blue slightly offset
+      const ox = clamp(x + split + Math.floor(Math.sin(y*0.02+t*0.0005)*4), 0, offCanvas.width-1);
+      const idxB = (y*offCanvas.width + ox)*4;
+      const b = data[idxB+2];
+      data[i+2] = Math.max(data[i+2], b);
+      // desaturate a bit to create cold-blue vibe
+      const avg = (data[i]+data[i+1]+data[i+2])/3;
+      data[i] = data[i]*0.35 + avg*0.65;
+      data[i+1] = data[i+1]*0.6 + avg*0.4;
+    }
+  }
+
+  gctx.putImageData(img,0,0);
+}
+
+// Small overlays: scratches & vignette
+function paintOverlays() {
+  // vignette
+  const vg = ctx.createRadialGradient(W/2,H/2, 0, W/2,H/2, Math.max(W,H)/1.2);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(0.7, 'rgba(0,0,0,0.25)');
+  vg.addColorStop(1, 'rgba(0,0,0,0.7)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0,0,W,H);
+
+  // red micro sparks (very subtle)
+  ctx.save();
+  ctx.globalAlpha = 0.07;
+  for(let i=0;i<14;i++){
+    const x = rand(W*0.05, W*0.95);
+    const y = rand(H*0.05, H*0.95);
+    ctx.beginPath();
+    ctx.arc(x,y,rand(0.5,2.6),0,Math.PI*2);
+    ctx.fillStyle = 'rgba(200,16,24,0.9)';
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Main render loop
+let time = 0;
+const off = document.createElement('canvas');
+off.width = W; off.height = H;
+
+function render() {
+  time += 16;
+  // paint base to offscreen canvas first
+  const octx = off.getContext('2d');
+  // clear
+  octx.fillStyle = '#000010';
+  octx.fillRect(0,0,W,H);
+
+  // call drawing functions but on offscreen
+  // replicate functions using octx temporarily
+  // slightly randomize each frame for organic glitch
+  paintBackgroundOff(octx);
+  drawCircuitLinesOff(octx);
+  drawCentralSymbolOff(octx, time);
+
+  // strong glitch processing
+  applyGlitchEffect(off, time);
+
+  // final: draw offscreen to main canvas
+  ctx.clearRect(0,0,W,H);
+  ctx.drawImage(off, 0, 0);
+
+  // final overlays on main
+  paintOverlays();
+
+  // occasional heavy glitch flashes
+  if(Math.random() < 0.03) {
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = 'rgba(0,200,255,0.03)';
+    ctx.fillRect(rand(0,W*0.2), rand(0,H*0.9), rand(W*0.2, W*0.6), rand(6, 60));
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  requestAnimationFrame(render);
+}
+
+/* ===== Offscreen variants: they reuse same logic but use provided context ===== */
+function paintBackgroundOff(octx){
+  const g = octx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0, '#021015');
+  g.addColorStop(0.6, '#00121a');
+  g.addColorStop(1, '#000006');
+  octx.fillStyle = g;
+  octx.fillRect(0,0,W,H);
+
+  const img = octx.createImageData(W,H);
+  for(let i=0;i<img.data.length;i+=4){
+    const v = Math.floor(4 + Math.random()*20);
+    img.data[i] = v+2; img.data[i+1] = v+10; img.data[i+2] = v+16; img.data[i+3] = 255;
+  }
+  const tmp = document.createElement('canvas');
+  tmp.width=W; tmp.height=H;
+  tmp.getContext('2d').putImageData(img,0,0);
+  octx.globalAlpha = 0.045;
+  octx.drawImage(tmp,0,0);
+  octx.globalAlpha = 1;
+}
+
+function drawCircuitLinesOff(octx){
+  octx.save();
+  octx.globalCompositeOperation = 'lighter';
+  octx.lineWidth = 1.3;
+  octx.strokeStyle = '#0fe0ff';
+  octx.globalAlpha = 0.16;
+
+  const rows = 10, cols = Math.floor(rows * (W/H));
+  const spacingX = W / cols, spacingY = H / rows;
+
+  function drawBranchLocal(ctxLocal,x,y,depth,angle,strength) {
+    if(depth<=0) return;
+    const len = 18 + 28*strength + rand(-8,12);
+    const nx = x + Math.cos(angle)*(len*(0.8+0.6*strength));
+    const ny = y + Math.sin(angle)*(len*(0.8+0.6*strength));
+    ctxLocal.beginPath();
+    ctxLocal.moveTo(x,y);
+    ctxLocal.lineTo(nx,ny);
+    ctxLocal.stroke();
+    if(Math.random() < 0.12) {
+      ctxLocal.beginPath();
+      ctxLocal.arc(nx,ny,0.9+Math.random()*1.6,0,Math.PI*2);
+      ctxLocal.fillStyle = '#09c7ff';
+      ctxLocal.fill();
+    }
+    if(Math.random() < 0.9) drawBranchLocal(ctxLocal,nx,ny,depth-1, angle + rand(-0.8,0.8), strength*0.82);
+    if(Math.random() < 0.45) drawBranchLocal(ctxLocal,nx,ny,Math.max(0,depth-2), angle + rand(-1.6,1.6), strength*0.6);
+  }
+
+  for(let y=0;y<=rows;y++){
+    for(let x=0;x<=cols;x++){
+      const cx = Math.floor(x*spacingX + rand(-spacingX*0.15, spacingX*0.15));
+      const cy = Math.floor(y*spacingY + rand(-spacingY*0.15, spacingY*0.15));
+      drawBranchLocal(octx, cx, cy, Math.floor(rand(2,5)), Math.PI*rand(), 0.9);
+    }
+  }
+
+  octx.restore();
+}
+
+function drawCentralSymbolOff(octx, timeLocal){
+  octx.save();
+  const cx = W*0.5, cy = H*0.5;
+  const radius = Math.min(W,H)*0.27;
+
+  const g = octx.createRadialGradient(cx,cy, radius*0.45, cx,cy, radius*1.6);
+  g.addColorStop(0, 'rgba(10,220,255,0.10)');
+  g.addColorStop(0.6, 'rgba(6,80,110,0.02)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  octx.fillStyle = g;
+  octx.fillRect(cx-radius*1.6, cy-radius*1.6, radius*3.2, radius*3.2);
+
+  octx.lineWidth = 6 + Math.sin(timeLocal*0.002)*0.8;
+  octx.strokeStyle = '#06d1ff';
+  octx.globalAlpha = 0.98;
+  octx.beginPath();
+  for(let a=0;a<Math.PI*2;a+=0.02) {
+    const r = radius + Math.sin(a*24 + timeLocal*0.006)*2.3 + rand(-0.8,0.8);
+    const x = cx + Math.cos(a)*r;
+    const y = cy + Math.sin(a)*r;
+    if(a===0) octx.moveTo(x,y); else octx.lineTo(x,y);
+  }
+  octx.closePath();
+  octx.stroke();
+
+  octx.lineWidth = 5;
+  octx.strokeStyle = '#9ff8ff';
+  octx.beginPath();
+  const pts = [];
+  for(let i=0;i<5;i++){
+    const ang = -Math.PI/2 + i*(2*Math.PI/5);
+    pts.push({
+      x: cx + Math.cos(ang)*(radius*0.75 + Math.sin(i*3 + timeLocal*0.01)*3),
+      y: cy + Math.sin(ang)*(radius*0.75 + Math.cos(i*4 + timeLocal*0.01)*3)
+    });
+  }
+  const order = [0,2,4,1,3,0];
+  for(let i=0;i<order.length;i++){
+    const p = pts[order[i]];
+    if(i===0) octx.moveTo(p.x,p.y); else octx.lineTo(p.x,p.y);
+  }
+  octx.stroke();
+
+  octx.globalAlpha = 0.98;
+  const eyeW = radius*0.45, eyeH = radius*0.2;
+  octx.beginPath();
+  octx.ellipse(cx, cy, eyeW*0.18, eyeW*0.18, 0, 0, Math.PI*2);
+  octx.fillStyle = 'rgba(255,255,255,0.95)';
+  octx.fill();
+
+  octx.lineWidth = 2.2;
+  octx.beginPath();
+  octx.ellipse(cx, cy, eyeW*0.55, eyeH*0.9, 0, 0, Math.PI*2);
+  octx.strokeStyle = '#8ff2ff';
+  octx.stroke();
+
+  octx.lineWidth = 2.4;
+  octx.strokeStyle = '#0cf0ff';
+  octx.beginPath();
+  octx.ellipse(cx, cy, eyeW, eyeH, 0, 0, Math.PI*2);
+  octx.stroke();
+
+  octx.globalAlpha = 0.16;
+  octx.lineWidth = 1.0;
+  for(let i=0;i<8;i++){
+    const ang = rand(0,Math.PI*2);
+    octx.beginPath();
+    const sx = cx + Math.cos(ang)*rand(eyeW*0.2, eyeW*0.6);
+    const sy = cy + Math.sin(ang)*rand(eyeH*0.2, eyeH*0.6);
+    octx.moveTo(cx,cy);
+    octx.lineTo(sx + rand(-8,8), sy + rand(-6,6));
+    octx.stroke();
+  }
+  octx.restore();
+}
+
+/* ===== start render ===== */
+render();
+
+/* ===== download button ===== */
+document.getElementById('download').addEventListener('click', ()=>{
+  // generate a higher-contrast final snapshot
+  const link = document.createElement('a');
+  link.download = 'portada_glitch_geo_blue.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+</script>
 </body>
 </html>
