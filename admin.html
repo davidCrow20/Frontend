@@ -35,16 +35,79 @@
         .form-section.active {
             display: block;
         }
+        .login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: #181818;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 35px 30px;
+            max-width: 420px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            text-align: center;
+        }
+
+        .login-card h2 {
+            margin-top: 0;
+            color: #fff;
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+
+        .login-card p {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .login-error {
+            background: rgba(255, 50, 50, 0.15);
+            border: 1px solid #ff3333;
+            color: #ff7777;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 0.9rem;
+            text-align: left;
+        }
     </style>
 </head>
 
 <body>
 
-    <div class="admin-container">
+    <!-- Pantalla de Login -->
+    <div id="login-container" class="login-wrapper">
+        <div class="login-card">
+            <h2>🔒 Acceso Restringido</h2>
+            <p>Ingresa la contraseña de administrador para gestionar las bandas, fotos e historias.</p>
+            <div id="loginError" class="login-error"></div>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                    <label style="color: #ccc; font-size: 0.85rem; display: block; margin-bottom: 8px;">Contraseña Maestra</label>
+                    <input type="password" id="adminPasswordInput" class="form-control" required placeholder="••••••••" autofocus>
+                </div>
+                <button type="submit" class="btn-primary" id="btnLoginSubmit" style="width: 100%; padding: 12px;">Ingresar al Panel</button>
+            </form>
+            <a href="index.html" style="display: inline-block; margin-top: 25px; color: #888; text-decoration: none; font-size: 0.85rem;">← Volver al sitio público</a>
+        </div>
+    </div>
+
+    <!-- Panel de Administración Principal (Oculto hasta iniciar sesión) -->
+    <div class="admin-container" id="admin-main-container" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <a href="index.html" style="color: var(--accent-purple); text-decoration: none;">← Volver al sitio</a>
+            <button onclick="handleLogout()" style="background: #2a1111; border: 1px solid #ff4444; color: #ff8888; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Cerrar Sesión ✕</button>
+        </div>
         <h1>Panel de Administración</h1>
-        <a href="index.html"
-            style="color: var(--accent-purple); text-decoration: none; margin-bottom: 20px; display: inline-block;">←
-            Volver al sitio</a>
 
         <div class="admin-nav">
             <button onclick="showSection('bandas')" class="active" id="btn-bandas">Bandas</button>
@@ -236,13 +299,65 @@
             : "https://metal-cr-frontend-2.onrender.com"; 
 
         // ------------------ AUTENTICACIÓN ------------------
-        let adminPassword = sessionStorage.getItem('adminPassword');
-        if (!adminPassword) {
-            adminPassword = prompt("Para hacer cambios, ingresa la Contraseña Maestra (si no la tienes, cancela):");
-            if (adminPassword) {
-                sessionStorage.setItem('adminPassword', adminPassword);
+        async function checkAuth() {
+            const token = sessionStorage.getItem('adminPassword');
+            const loginCard = document.getElementById('login-container');
+            const adminPanel = document.getElementById('admin-main-container');
+
+            if (!token) {
+                loginCard.style.display = 'flex';
+                adminPanel.style.display = 'none';
+                return;
+            }
+
+            loginCard.style.display = 'none';
+            adminPanel.style.display = 'block';
+            loadBandaSelect();
+            loadLugarSelect();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const input = document.getElementById('adminPasswordInput');
+            const errorBox = document.getElementById('loginError');
+            const btn = document.getElementById('btnLoginSubmit');
+
+            errorBox.style.display = 'none';
+            btn.disabled = true;
+            btn.innerText = "Verificando...";
+
+            try {
+                const res = await fetch(`${API_BASE}/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: input.value.trim() })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    sessionStorage.setItem('adminPassword', input.value.trim());
+                    document.getElementById('login-container').style.display = 'none';
+                    document.getElementById('admin-main-container').style.display = 'block';
+                    loadBandaSelect();
+                    loadLugarSelect();
+                } else {
+                    errorBox.innerText = data.error || "Contraseña incorrecta.";
+                    errorBox.style.display = 'block';
+                }
+            } catch(err) {
+                errorBox.innerText = "Error al conectar con el servidor.";
+                errorBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Ingresar al Panel";
             }
         }
+
+        function handleLogout() {
+            sessionStorage.removeItem('adminPassword');
+            location.reload();
+        }
+
+        window.onload = checkAuth;
 
         async function loadLugarSelect() {
             try {
